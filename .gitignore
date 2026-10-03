@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Clone do repositorio original (fudan-zvg/ref-gaussian), mantido fora deste repo
+ref-gaussian/
+
+# Windows
+desktop.ini
