@@ -145,10 +145,12 @@ def main():
             subprocess.run([sys.executable, os.path.join(AQUI, "figs", "make_figs.py"), c, "0"], check=False)
 
     # --- Compila e empacota ---
-    for _ in range(2):
-        subprocess.run([PDFLATEX, "-interaction=nonstopmode", "-halt-on-error", "relatorio.tex"],
-                       cwd=AQUI, stdout=subprocess.DEVNULL, check=True)
-    arquivos = ["relatorio.tex", "IEEEtran.cls", "tab_replicacao.tex", "tab_custo.tex"]
+    textos = [t for t in ("relatorio.tex", "relatorio-completo.tex") if os.path.exists(os.path.join(AQUI, t))]
+    for tex in textos:
+        for _ in range(2):
+            subprocess.run([PDFLATEX, "-interaction=nonstopmode", "-halt-on-error", tex],
+                           cwd=AQUI, stdout=subprocess.DEVNULL, check=True)
+    arquivos = textos + ["IEEEtran.cls", "tab_replicacao.tex", "tab_custo.tex"]
     arquivos += [os.path.join("figs", f) for f in os.listdir(os.path.join(AQUI, "figs")) if f.endswith(".png")]
     with zipfile.ZipFile(os.path.join(AQUI, "relatorio-ieee-overleaf.zip"), "w", zipfile.ZIP_DEFLATED) as z:
         for f in arquivos:

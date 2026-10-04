@@ -5,8 +5,9 @@ Pasta central para toda a escrita do mestrado (UFPE/CIn) sobre Gaussian Splattin
 ## Estrutura
 
 - `relatorio-ieee/` — relatório incremental no formato IEEE conference
-  - `relatorio.tex` — texto principal (pdfLaTeX)
-  - `relatorio.pdf` — versão compilada
+  - `relatorio.tex` / `relatorio.pdf` — versão enxuta, em linguagem simples (a que está sendo entregue)
+  - `relatorio-completo.tex` / `relatorio-completo.pdf` — versão detalhada (equações, decomposição de material, mapa de ambiente, curvas de treino), para consulta e para as próximas entregas
+  - `atualizar_resultados.py` — atualiza tabelas e figuras com as cenas concluídas e recompila as duas versões
   - `figs/` — figuras; `figs/make_figs.py <cena> <vista>` regenera os painéis qualitativos a partir de `ref-gaussian/output/<cena>`
   - `template-original-ieee.tex`, `IEEEtran_HOWTO.pdf` — template e manual originais da IEEE, para consulta
 
