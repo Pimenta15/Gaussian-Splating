@@ -90,20 +90,14 @@ A Fig.~\ref{fig:pipeline} resume o pipeline do Ref-Gaussian. Seus componentes s�
 
 \begin{table*}[t]
 \centering
-\caption{Replicação do Ref-Gaussian no Shiny Blender Synthetic: valores reportados no artigo~\cite{yao2025refgaussian} e obtidos neste trabalho (RTX 4050 Laptop). ``--'' indica treino em andamento.}
+\caption{Replicação do Ref-Gaussian no Shiny Blender Synthetic: valores reportados no artigo~\cite{yao2025refgaussian} e obtidos neste trabalho (RTX 4050 Laptop); $\Delta$ é a diferença de PSNR da replicação em relação ao artigo. ``--'' indica treino em andamento.}
 \label{tab:replicacao}
 \begin{tabular}{llccccccc}
 \toprule
 Métrica & Origem & Ball & Car & Coffee & Helmet & Teapot & Toaster & Média \\
 \midrule
-\multirow{2}{*}{PSNR $\uparrow$}  & Artigo     & 37,01 & 31,04 & 34,63 & 32,32 & 47,16 & 28,05 & 35,04 \\
-                                  & Replicação & \pend & \pend & \pend & \pend & \pend & 27,51 & \pend \\
-\midrule
-\multirow{2}{*}{SSIM $\uparrow$}  & Artigo     & 0,981 & 0,964 & 0,976 & 0,971 & 0,998 & 0,948 & 0,973 \\
-                                  & Replicação & \pend & \pend & \pend & \pend & \pend & 0,948 & \pend \\
-\midrule
-\multirow{2}{*}{LPIPS $\downarrow$} & Artigo     & 0,098 & 0,033 & 0,076 & 0,049 & 0,006 & 0,074 & 0,056 \\
-                                    & Replicação & \pend & \pend & \pend & \pend & \pend & 0,074 & \pend \\
+% Linhas geradas por atualizar_resultados.py a partir de ref-gaussian/output/<cena>/metric.txt
+\csname @@input\endcsname tab_replicacao.tex
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -188,7 +182,30 @@ As métricas são as do artigo, calculadas pelo script de avaliação oficial so
 
 \textbf{Métricas.} A Tabela~\ref{tab:replicacao} compara os resultados obtidos com os do artigo. Na cena \textit{toaster}, a mais difícil do conjunto para todos os métodos (Tabela~\ref{tab:sota}), o SSIM e o LPIPS replicados coincidem com os reportados até a terceira casa decimal, e o PSNR fica 0,54~dB abaixo. A diferença é pequena diante da variação esperada entre execuções de métodos com treino estocástico, e há fatores conhecidos que podem explicá-la: GPU, versão do compilador e não determinismo das operações atômicas na rasterização. Há também a diferença de cronograma de treino descrita na Seção~\ref{sec:exp}. Mesmo 0,54~dB abaixo, o resultado supera em 0,75~dB o melhor método anterior nessa cena (3DGS-DR). As demais cenas estão em treino e completarão a tabela na próxima entrega.
 
-\textbf{Custo computacional.} O treino completo da cena \textit{toaster} levou cerca de 1h46min, e a renderização na avaliação atingiu 38,9~FPS. O artigo reporta 0,58~h de treino em média e 122~FPS em uma NVIDIA A6000. A diferença é coerente com a distância de capacidade entre uma GPU de notebook de 6~GB e uma GPU de estação de trabalho de 48~GB. Ainda assim, mostra que o baseline pode ser treinado integralmente em hardware de consumo, o que viabiliza os experimentos da dissertação.
+\begin{table}[t]
+\centering
+\caption{Custo na RTX 4050 Laptop: tempo de treino (50.000 iterações) e taxa de renderização na avaliação.}
+\label{tab:custo}
+\begin{tabular}{lcc}
+\toprule
+Cena & Tempo de treino & FPS \\
+\midrule
+% Linhas geradas por atualizar_resultados.py
+\csname @@input\endcsname tab_custo.tex
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/curvas_psnr.png}
+\caption{PSNR nas vistas de teste ao longo do treino, para as cenas concluídas. As linhas tracejadas marcam o fim do sombreamento por Gaussiana (18 mil iterações) e o início da inter-reflexão (20 mil).}
+\label{fig:curvas}
+\end{figure}
+
+\textbf{Dinâmica do treino.} A Fig.~\ref{fig:curvas} mostra a evolução do PSNR de teste, medido pelo próprio script de treino a cada mil iterações. Na cena \textit{toaster}, o estágio de sombreamento por Gaussiana leva o PSNR a cerca de 24,3~dB na iteração 18 mil. A troca para a renderização diferida derruba o valor temporariamente para 20,2~dB, já que os mapas de material passam a ser combinados antes do sombreamento, mas ele se recupera em menos de 2 mil iterações. A partir da inter-reflexão (20 mil), o PSNR sobe para cerca de 28,2~dB em torno de 43 mil iterações; esse ganho de quase 4~dB após a etapa inicial indica que a renderização diferida e o termo indireto respondem por boa parte da qualidade final. Nas últimas milhares de iterações há uma leve queda (de 28,19 para 27,96~dB). Além disso, o script de avaliação mede 27,51~dB sobre as mesmas 200 vistas, 0,45~dB abaixo da medição feita durante o treino; a origem dessa diferença entre os dois scripts ainda será investigada. Esses dois pontos indicam que parte da distância para o artigo pode estar no protocolo de medição e na escolha do checkpoint, e não no método.
+
+\textbf{Custo computacional.} A Tabela~\ref{tab:custo} resume o custo por cena. O treino completo da cena \textit{toaster} levou cerca de 1h46min, e a renderização na avaliação atingiu 38,9~FPS. O artigo reporta 0,58~h de treino em média e 122~FPS em uma NVIDIA A6000. A diferença é coerente com a distância de capacidade entre uma GPU de notebook de 6~GB e uma GPU de estação de trabalho de 48~GB. Ainda assim, mostra que o baseline pode ser treinado integralmente em hardware de consumo, o que viabiliza os experimentos da dissertação.
 
 \textbf{Análise qualitativa.} Na Fig.~\ref{fig:toaster}, a renderização reproduz os reflexos especulares do corpo metálico, incluindo os reflexos das fatias de pão sobre a carcaça, uma situação de inter-reflexão. O mapa de normais estimado, por outro lado, é mais suave que o real: os frisos verticais estreitos nas laterais praticamente desaparecem, e surgem artefatos de baixa opacidade no fundo, fora do objeto. Esse descompasso entre aparência correta e geometria aproximada é relevante para as propostas da Seção~\ref{sec:metodo}. Como a visibilidade do baseline é calculada sobre uma malha derivada dessa geometria, erros finos de normal e de superfície se propagam para o termo de inter-reflexão. Esse efeito motiva tanto a amostragem do lóbulo (P1) quanto a visibilidade calculada diretamente sobre as primitivas (P2).
 
