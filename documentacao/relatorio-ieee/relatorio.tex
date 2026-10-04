@@ -209,12 +209,46 @@ Cena & Tempo de treino & FPS \\
 
 \textbf{Análise qualitativa.} Na Fig.~\ref{fig:toaster}, a renderização reproduz os reflexos especulares do corpo metálico, incluindo os reflexos das fatias de pão sobre a carcaça, uma situação de inter-reflexão. O mapa de normais estimado, por outro lado, é mais suave que o real: os frisos verticais estreitos nas laterais praticamente desaparecem, e surgem artefatos de baixa opacidade no fundo, fora do objeto. Esse descompasso entre aparência correta e geometria aproximada é relevante para as propostas da Seção~\ref{sec:metodo}. Como a visibilidade do baseline é calculada sobre uma malha derivada dessa geometria, erros finos de normal e de superfície se propagam para o termo de inter-reflexão. Esse efeito motiva tanto a amostragem do lóbulo (P1) quanto a visibilidade calculada diretamente sobre as primitivas (P2).
 
-\textbf{Próximos passos.} (i) Concluir as cinco cenas restantes do Shiny Blender e completar a Tabela~\ref{tab:replicacao}; (ii) estender a replicação ao Glossy Synthetic e ao Shiny Blender Real; (iii) instrumentar o código para medir separadamente o custo da extração de malha e do ray tracing; e (iv) implementar uma primeira versão de P1 com $K$ pequeno e compará-la ao baseline.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/toaster_psnr_vistas.png}
+\caption{PSNR por vista de teste na cena \textit{toaster}: valor de cada uma das 200 vistas (esquerda, linha tracejada na média) e histograma (direita).}
+\label{fig:vistas}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/toaster_extremos.png}
+\caption{Pior (vista 90, 18,4~dB) e melhor (vista 124, 33,5~dB) vistas de teste da cena \textit{toaster}, com o erro absoluto amplificado 4 vezes. Na pior vista, a lateral espelhada, que na imagem real reflete uma região escura, é renderizada clara.}
+\label{fig:extremos}
+\end{figure*}
+
+\textbf{Análise por vista.} A média de 27,51~dB esconde uma variação grande entre vistas (Fig.~\ref{fig:vistas}). O PSNR por vista tem desvio-padrão de 2,58~dB e vai de 18,36 a 33,50~dB; 32 das 200 vistas ficam abaixo de 25~dB. A curva ao longo das vistas, que percorrem uma trajetória em torno do objeto, mostra que as quedas se concentram em faixas contíguas de ângulos, e não em vistas isoladas. Isso indica que o erro depende da geometria de observação, ou seja, de quais regiões do ambiente cada superfície reflete naquela vista. A Fig.~\ref{fig:extremos} compara os extremos. Na melhor vista, a face frontal reflete um ambiente suave e o erro fica restrito às bordas. Na pior, a lateral espelhada da torradeira, que na imagem real reflete uma região escura próxima, é renderizada com um reflexo claro e mal posicionado, e o erro se concentra nessa área. Esse tipo de falha é compatível com uma estimativa incorreta de visibilidade ou de luz indireta: se o raio refletido não é marcado como ocluído, o modelo usa a iluminação distante do mapa de ambiente onde deveria haver luz próxima e escura. A confirmação dessa hipótese, por exemplo inspecionando o mapa de visibilidade nessa vista, é um dos primeiros experimentos previstos para P1 e P2.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/toaster_decomposicao.png}
+\caption{Mapas intermediários da renderização diferida na cena \textit{toaster} (iteração 50.000, vista de treino): albedo, componentes difusa e especular, metalicidade, rugosidade e erro absoluto em relação à imagem real.}
+\label{fig:decomp}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/toaster_envmap.png}
+\caption{Mapa de ambiente aprendido na cena \textit{toaster} (projeção equirretangular), reconstruído apenas a partir dos reflexos observados no objeto.}
+\label{fig:envmap}
+\end{figure}
+
+\textbf{Decomposição de material e iluminação.} A renderização diferida permite inspecionar separadamente os fatores que o modelo aprendeu (Fig.~\ref{fig:decomp}). A separação física é em grande parte coerente: o corpo da torradeira recebe metalicidade alta e rugosidade baixa, e as fatias de pão recebem metalicidade baixa e rugosidade alta, de modo que a componente especular fica concentrada no metal e a difusa no pão. A decomposição, porém, não é limpa. O albedo da região entre as fatias apresenta cores espúrias, azuladas e iridescentes, que não existem no objeto; a rugosidade varia em manchas sobre o metal, que deveria ser uniforme; e todos os mapas mostram um halo de Gaussianas de baixa opacidade fora do objeto, à esquerda. Os autores atribuem justamente à aproximação de visibilidade parte do ruído na estimativa de materiais, e esta observação dá uma forma qualitativa e mensurável a essa limitação: as métricas de imagem quase não são afetadas, já que o erro final é baixo, mas os materiais recuperados são menos confiáveis do que a renderização sugere. Para aplicações que dependem dos materiais, como reiluminação e inserção de objetos em realidade aumentada, esse é o aspecto mais relevante a melhorar. A Fig.~\ref{fig:envmap} mostra o mapa de ambiente aprendido. O modelo reconstrói, apenas a partir dos reflexos, um ambiente interno reconhecível, com janelas, luminárias, uma cama e uma poltrona, embora borrado e com distorções nas regiões pouco vistas pelos reflexos, como a parte inferior do mapa.
+
+\textbf{Síntese.} Os resultados desta etapa indicam que (i) o baseline é reproduzível em hardware de consumo, com métricas próximas às do artigo; (ii) a qualidade média esconde falhas localizadas, ligadas a vistas em que as superfícies refletem regiões próximas; e (iii) os materiais recuperados são ruidosos mesmo quando a imagem renderizada é fiel. Os pontos (ii) e (iii) são precisamente os efeitos esperados da aproximação de visibilidade do baseline, o que reforça a escolha de P1 e P2 como linhas de investigação.
+
+\textbf{Próximos passos.} (i) Concluir as cinco cenas restantes do Shiny Blender e completar a Tabela~\ref{tab:replicacao}; (ii) estender a replicação ao Glossy Synthetic e ao Shiny Blender Real; (iii) instrumentar o código para medir separadamente o custo da extração de malha e do ray tracing; (iv) exportar os mapas de visibilidade e de luz indireta nas vistas de maior erro, para testar a hipótese levantada na análise por vista; e (v) implementar uma primeira versão de P1 com $K$ pequeno e compará-la ao baseline.
 
 % =====================================================================
 \section{Conclusão}
 
-Este relatório apresentou o método Ref-Gaussian, adotado como baseline da dissertação, e discutiu duas de suas limitações: a visibilidade testada em uma única direção e a dependência de uma malha extraída periodicamente. Para cada uma foi proposta uma linha de investigação. O baseline foi portado para Windows e executado em uma GPU de notebook, e a replicação na cena \textit{toaster} reproduziu os resultados do artigo com diferença de 0,54~dB em PSNR e métricas perceptuais idênticas.
+Este relatório apresentou o método Ref-Gaussian, adotado como baseline da dissertação, e discutiu duas de suas limitações: a visibilidade testada em uma única direção e a dependência de uma malha extraída periodicamente. Para cada uma foi proposta uma linha de investigação. O baseline foi portado para Windows e executado em uma GPU de notebook, e a replicação na cena \textit{toaster} reproduziu os resultados do artigo com diferença de 0,54~dB em PSNR e métricas perceptuais idênticas. A análise por vista e a decomposição de material mostraram dois sintomas que serão usados como referência para avaliar as propostas: erros concentrados em vistas nas quais as superfícies refletem regiões próximas e materiais ruidosos sob uma renderização fiel.
 
 \begin{thebibliography}{00}
 \bibitem{kerbl2023} B. Kerbl, G. Kopanas, T. Leimkühler, and G. Drettakis, ``3D Gaussian splatting for real-time radiance field rendering,'' \textit{ACM Trans. Graph.}, vol. 42, no. 4, 2023.
