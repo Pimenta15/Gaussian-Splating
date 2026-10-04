@@ -1,4 +1,5 @@
 @echo off
+setlocal
 REM Roda um script Python do ref-gaussian no ambiente do compilador (CUDA 11.8 + VS 2022),
 REM necessario porque nvdiffrast e scene/renderutils compilam extensoes CUDA na primeira execucao.
 REM Uso: run_ref_gaussian.bat train.py -s data/ref_nerf/toaster --eval --white_background
