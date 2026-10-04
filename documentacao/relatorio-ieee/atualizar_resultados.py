@@ -58,6 +58,12 @@ def metricas(cena):
         if t:
             h, mi, s = map(int, t[-1])
             tempo = h + mi / 60 + s / 3600
+    if tempo is None:
+        # treino rodado sem log em arquivo: inicio (cfg_args) ate o checkpoint final
+        ini = os.path.join(RG, "output", cena, "cfg_args")
+        fim = os.path.join(RG, "output", cena, "point_cloud", "iteration_50000")
+        if os.path.exists(ini) and os.path.exists(fim):
+            tempo = (os.path.getmtime(fim) - os.path.getmtime(ini)) / 3600
     return {"psnr": psnr, "ssim": ssim, "lpips": lpips, "fps": fps, "tempo": tempo}
 
 
