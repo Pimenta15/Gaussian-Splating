@@ -1,0 +1,42 @@
+{
+ "cena": "toaster",
+ "extent": 5.202147674560547,
+ "resultados": [
+  {
+   "eps": 0.0,
+   "psnr_medio": 27.51095938682556,
+   "psnr_pior_vista": 18.363759994506836,
+   "vista_pior": 90,
+   "psnr_vista_90": 18.363759994506836,
+   "frac_ocluida_media": 0.22217809579335154,
+   "vistas_abaixo_25": 32
+  },
+  {
+   "eps": 0.002,
+   "psnr_medio": 27.51153646469116,
+   "psnr_pior_vista": 18.36593246459961,
+   "vista_pior": 90,
+   "psnr_vista_90": 18.36593246459961,
+   "frac_ocluida_media": 0.2220369116868824,
+   "vistas_abaixo_25": 32
+  },
+  {
+   "eps": 0.01,
+   "psnr_medio": 27.512424373626708,
+   "psnr_pior_vista": 18.36756706237793,
+   "vista_pior": 90,
+   "psnr_vista_90": 18.36756706237793,
+   "frac_ocluida_media": 0.2216082183085382,
+   "vistas_abaixo_25": 32
+  },
+  {
+   "eps": 0.05,
+   "psnr_medio": 27.54340844154358,
+   "psnr_pior_vista": 18.44509506225586,
+   "vista_pior": 90,
+   "psnr_vista_90": 18.44509506225586,
+   "frac_ocluida_media": 0.21343167535960675,
+   "vistas_abaixo_25": 32
+  }
+ ]
+}
