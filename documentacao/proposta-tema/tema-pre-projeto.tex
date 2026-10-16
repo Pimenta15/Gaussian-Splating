@@ -1,0 +1,62 @@
+\documentclass[11pt,a4paper]{article}
+% Tema para Pre-Projeto de Mestrado (CIn/UFPE) - mesmo layout do formulario da coordenacao.
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{newtxtext}
+\usepackage[scaled=0.95]{helvet}
+\usepackage[a4paper,top=2.2cm,bottom=2.2cm,left=2.2cm,right=2.2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{ulem}
+\normalem
+\pagestyle{empty}
+\setlength{\parindent}{1.25em}
+\definecolor{faixa}{gray}{0.86}
+
+\newcommand{\faixa}[2][\large]{%
+  \par\noindent\colorbox{faixa}{\parbox{\dimexpr\linewidth-2\fboxsep}{\sffamily\bfseries#1 #2}}\par}
+
+\begin{document}
+
+\begin{center}
+{\sffamily\large Universidade Federal de Pernambuco (UFPE)\\ Centro de Informática (CIn)}
+\end{center}
+\vspace{1.6em}
+
+\noindent\colorbox{faixa}{\parbox{\dimexpr\linewidth-2\fboxsep}{\centering\rule{0pt}{1.6em}\sffamily\bfseries\Large Coordenação de Pós-Graduação em Ciência da Computação\rule[-0.7em]{0pt}{0pt}}}
+
+\begin{center}
+{\sffamily\bfseries\Large\uline{Tema para Pré-Projeto de Mestrado}}
+\end{center}
+
+\noindent
+\begin{tabular}{@{\hspace{1em}}>{\raggedleft\bfseries}p{0.19\linewidth}@{\hspace{0.4em}}p{0.74\linewidth}}
+Linha de pesquisa: & Visão Computacional, Realidade Virtual e Aumentada \\[2pt]
+Título: & Integração de Dados Sintéticos e Reais para Recuperação Robusta de Cenas 4D \\[2pt]
+Proponente: & Francisco Paulo Magalhães Simões \\
+\end{tabular}
+
+\vspace{0.8em}
+\faixa{Descrição:}
+\vspace{0.6em}
+
+{\small
+Métodos de recuperação de cenas dinâmicas (4D) baseados em Gaussian Splatting têm alcançado reconstruções fotorrealistas com renderização em tempo real [1]. Sua robustez, porém, ainda é limitada em condições frequentes em cenas reais, como movimentos rápidos, oclusões, poucas vistas e materiais com aparência complexa, e sua avaliação depende de bases reais pequenas, nas quais a geometria e o movimento de referência são difíceis de obter. Dados sintéticos gerados por motores de renderização oferecem controle total da cena e anotações exatas [2], mas a diferença de domínio em relação aos dados reais limita o seu uso direto [3]. Na replicação do Ref-Gaussian [4], realizada como etapa preliminar, o método atingiu cerca de 34 dB de PSNR em objetos sintéticos, enquanto o artigo original reporta entre 23 e 27 dB em cenas reais. Nesse contexto, esta pesquisa visa investigar o relacionamento entre dados sintéticos e reais para aumentar a robustez de métodos de recuperação de cenas 4D, analisando como gerar, combinar e ponderar esses dados no treinamento e na avaliação. O diferencial está na geração controlada de dados sintéticos dirigida às falhas observadas nos métodos atuais e na medição sistemática de quanto da robustez obtida se transfere para cenas reais.
+\par}
+
+\vspace{1.2em}
+\faixa{Referências Bibliográficas:}
+\vspace{0.6em}
+
+{\small
+[1] WU, Guanjun et al. 4D Gaussian Splatting for Real-Time Dynamic Scene Rendering. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2024.
+
+[2] GREFF, Klaus et al. Kubric: A Scalable Dataset Generator. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022.
+
+[3] TOBIN, Josh et al. Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World. In: Proceedings of the IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2017.
+
+[4] YAO, Yuxuan et al. Reflective Gaussian Splatting. In: Proceedings of the International Conference on Learning Representations (ICLR), 2025.
+\par}
+
+\end{document}
