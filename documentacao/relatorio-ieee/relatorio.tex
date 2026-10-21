@@ -38,7 +38,7 @@ fpms@cin.ufpe.br}
 \maketitle
 
 \begin{abstract}
-Métodos de Gaussian Splatting reconstroem cenas 3D a partir de fotos e as renderizam em tempo real, mas têm dificuldade com objetos espelhados, como metais polidos. O Reflective Gaussian Splatting (Ref-Gaussian) trata esse problema modelando explicitamente o material e a luz refletida. Este relatório descreve o método, aponta uma limitação na forma como ele decide se um reflexo está bloqueado por outra parte do objeto e propõe duas formas de melhorá-la. Como primeiro passo, o código oficial foi executado em um notebook comum e os resultados do artigo foram replicados nas seis cenas do conjunto Shiny Blender: o SSIM médio é idêntico ao publicado, o LPIPS médio difere em 0,001 e o PSNR médio fica cerca de 0,6 dB abaixo, diferença que se explica em boa parte pelo protocolo de avaliação. A análise dos erros mostra que eles se concentram nos pontos em que o método usa a luz refletida pelo próprio objeto.
+Métodos de Gaussian Splatting reconstroem cenas 3D a partir de fotos e as renderizam em tempo real, mas têm dificuldade com objetos espelhados, como metais polidos. O Reflective Gaussian Splatting (Ref-Gaussian) trata esse problema modelando explicitamente o material e a luz refletida. Este relatório descreve o método, aponta uma limitação na forma como ele decide se um reflexo está bloqueado por outra parte do objeto e propõe duas formas de melhorá-la. Como primeiro passo, o código oficial foi executado em um notebook comum e os resultados do artigo foram replicados nas seis cenas do conjunto Shiny Blender: o SSIM médio é idêntico ao publicado, o LPIPS médio difere em 0,001 e o PSNR médio fica cerca de 0,6 dB abaixo, diferença que se explica em boa parte pelo protocolo de avaliação. Mesmo assim, a replicação fica 4,1~dB acima do 3DGS original na média reportada pelo artigo. A análise dos erros mostra que eles se concentram nos pontos em que o método usa a luz refletida pelo próprio objeto, o que só acontece em objetos espelhados com partes que se refletem, e que os materiais estimados saem ruidosos mesmo quando a imagem final é fiel.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -160,15 +160,68 @@ Cena & Gaussianas / malha & PSNR & SSIM & LPIPS \\
 \label{fig:vis}
 \end{figure*}
 
-\textbf{Os resultados do artigo se repetem.} A Tabela~\ref{tab:replicacao} compara os valores obtidos com os publicados nas seis cenas. Na média, o SSIM (0,973) é idêntico ao do artigo, o LPIPS difere em 0,001 (0,057 contra 0,056) e o PSNR fica 0,57~dB abaixo (34,46 contra 35,04~dB, Tabela~\ref{tab:replicacao}). Em \textit{car} e \textit{teapot} os resultados ficam iguais ou acima dos publicados; em \textit{coffee} e \textit{toaster} ficam a menos de 0,6~dB; quase todo o déficit vem de \textit{helmet} ($-1{,}87$~dB) e \textit{ball} ($-0{,}94$~dB). Em quatro das seis cenas (\textit{ball}, \textit{car}, \textit{teapot} e \textit{toaster}) o resultado fica acima do melhor método anterior ao Ref-Gaussian segundo o próprio artigo (3DGS-DR~\cite{ye2024dr}); em \textit{coffee} e \textit{helmet} fica abaixo dele.
+\begin{table}[t]
+\centering
+\caption{PSNR (dB) no Shiny Blender: outros métodos, segundo a Tabela~1 do artigo~\cite{yao2025refgaussian}, e a replicação deste trabalho. Em negrito, o maior valor de cada coluna.}
+\label{tab:contexto}
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+Método & Ball & Car & Coffee & Helmet & Teapot & Toaster & Média \\
+\midrule
+3DGS~\cite{kerbl2023} & 27,65 & 27,26 & 32,30 & 28,22 & 45,71 & 20,99 & 30,36 \\
+2DGS~\cite{huang2024_2dgs} & 25,97 & 26,38 & 32,31 & 27,42 & 44,97 & 20,42 & 29,58 \\
+Ref-NeRF~\cite{verbin2022refnerf} & 33,16 & 30,44 & 33,99 & 29,94 & 45,12 & 26,12 & 33,13 \\
+GShader~\cite{jiang2024gshader} & 30,99 & 27,96 & 32,39 & 28,32 & 45,86 & 26,28 & 31,97 \\
+3DGS-DR~\cite{ye2024dr} & 33,43 & 30,48 & 34,53 & 31,44 & 47,04 & 26,76 & 33,95 \\
+Ref-Gaussian (artigo) & \textbf{37,01} & 31,04 & \textbf{34,63} & \textbf{32,32} & 47,16 & \textbf{28,05} & \textbf{35,04} \\
+\midrule
+Ref-Gaussian (replicação) & 36,07 & \textbf{31,25} & 34,29 & 30,45 & \textbf{47,19} & 27,51 & 34,46 \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/curvas_psnr.png}
+\caption{PSNR de teste ao longo do treino, nas cinco cenas em que foi registrado. A queda entre 18 mil e 20 mil iterações (linhas tracejadas) é a troca para o cálculo de luz por pixel com reflexos entre partes do objeto.}
+\label{fig:curvas}
+\end{figure}
+
+\textbf{Os resultados do artigo se repetem.} A Tabela~\ref{tab:replicacao} compara os valores obtidos com os publicados nas seis cenas. Na média, o SSIM (0,973) é idêntico ao do artigo, o LPIPS difere em 0,001 (0,057 contra 0,056) e o PSNR fica 0,57~dB abaixo (34,46 contra 35,04~dB, Tabela~\ref{tab:replicacao}). Em \textit{car} e \textit{teapot} os resultados ficam iguais ou acima dos publicados; em \textit{coffee} e \textit{toaster} ficam a menos de 0,6~dB; quase todo o déficit vem de \textit{helmet} ($-1{,}87$~dB) e \textit{ball} ($-0{,}94$~dB).
+
+\textbf{A vantagem sobre os outros métodos se mantém.} A Tabela~\ref{tab:contexto} coloca a replicação ao lado dos métodos comparados no artigo. Mesmo com o déficit de 0,57~dB, ela fica 4,1~dB acima do 3DGS original na média (34,46 contra 30,36~dB), com as maiores diferenças justamente nos objetos mais espelhados: +8,4~dB na \textit{ball} e +6,5~dB na \textit{toaster}. Em quatro das seis cenas (\textit{ball}, \textit{car}, \textit{teapot} e \textit{toaster}) o resultado fica acima do melhor método anterior ao Ref-Gaussian segundo o próprio artigo (3DGS-DR~\cite{ye2024dr}); em \textit{coffee} e \textit{helmet} fica abaixo dele. Na \textit{teapot}, quase convexa e pouco espelhada, todos os métodos ficam entre 45 e 47~dB, e a escolha do método quase não importa.
+
+\textbf{O treino tem duas fases visíveis.} A Fig.~\ref{fig:curvas} mostra o PSNR de teste durante o treino. Até 18 mil iterações o método usa o modo mais simples; na troca para o cálculo de luz por pixel o PSNR cai por algumas iterações (de 24,3 para 20,2~dB na \textit{toaster}) e logo passa do patamar anterior. A partir daí as curvas sobem devagar até o fim, exceto em \textit{toaster} e \textit{helmet}, em que atingem um pico perto de 43 mil iterações e depois caem, como discutido a seguir.
 
 \textbf{Parte do desvio vem do protocolo, não do método.} Durante o treino, o PSNR de teste chega ao valor do artigo e depois cai: na \textit{helmet} ele atinge 32,29~dB por volta da iteração 43 mil e termina em 31,36~dB. Avaliando os checkpoints salvos (Tabela~\ref{tab:checkpoints}), o modelo com 40 mil iterações supera o artigo nas três métricas na \textit{toaster} e fica a 0,23~dB dele na \textit{helmet}, contra 1,87~dB com o modelo final. Há ainda um segundo efeito: o \texttt{eval.py} usa a malha extraída na última iteração, e só trocar a malha da iteração 48 mil por essa custa 0,4 a 0,8~dB. Os números do artigo são, portanto, praticamente alcançáveis com o código publicado; boa parte da diferença está em que ponto do treino e com qual malha se mede.
 
-\textbf{Dá para treinar em um notebook.} Cada cena levou entre 49 minutos (\textit{teapot}) e 1h46min (\textit{toaster}). O artigo relata cerca de 35 minutos em uma GPU profissional (NVIDIA A6000). Os experimentos da dissertação são viáveis com o equipamento disponível.
+\textbf{Dá para treinar em um notebook.} Cada cena levou entre 49 minutos (\textit{teapot}) e 1h46min (\textit{toaster}). O artigo relata cerca de 35 minutos em uma GPU profissional (NVIDIA A6000). Os experimentos da dissertação são viáveis com o equipamento disponível. O mesmo código também foi executado em um contêiner Docker com Linux e CUDA~11.8, na mesma máquina, sem os ajustes de compilação do Windows. Com um cronograma reduzido para 10 mil iterações, em que todas as fases do treino são encurtadas na mesma proporção, a \textit{teapot} chega a 45,04~dB (SSIM 0,997, LPIPS 0,009) em 13 minutos, contra 47,19~dB em 49 minutos com o cronograma completo. Isso permite testar mudanças no método rapidamente antes de um treino completo.
 
 \textbf{A média esconde erros localizados.} Na \textit{toaster}, o PSNR varia de 18,4 a 33,5~dB entre as 200 imagens de teste, e 32 delas ficam abaixo de 25~dB; na \textit{helmet}, são 24 abaixo de 25~dB, com o erro concentrado na viseira espelhada. Nas cenas \textit{ball}, \textit{coffee} e \textit{teapot} nenhuma imagem fica abaixo de 29~dB.
 
+\textbf{As quedas fortes só aparecem em objetos espelhados que se refletem.} A esfera (\textit{ball}) é convexa: nenhum ponto da superfície enxerga outra parte do objeto, então a visibilidade vale sempre $V=1$, e nenhuma imagem de teste fica abaixo de 31,6~dB. O bule (\textit{teapot}), quase convexo, e a xícara (\textit{coffee}), de cerâmica e menos espelhada, também não têm quedas. Elas aparecem na torradeira e no capacete, objetos espelhados com partes que se refletem umas nas outras, ou seja, exatamente onde a Eq.~\eqref{eq:vis} usa o termo $L_{\text{objeto}}$.
+
 \textbf{Onde o método erra: a luz refletida pelo próprio objeto.} Para testar a hipótese da visibilidade, o mapa $V$ foi exportado nas 200 vistas da \textit{toaster}. Nos pixels em que o raio é dado como bloqueado ($V=0$), o erro médio é 2,2 vezes o dos pixels visíveis, e 4,3 vezes na pior imagem (Fig.~\ref{fig:vis}). Nessa imagem, a luz do ambiente já tinha o tom escuro correto da face direita; o erro surge numa mancha em que $V=0$ e o método passa a usar a luz indireta, que sai clara. A hipótese inicial, de um raio que ``escapa'' quando deveria ser bloqueado, estava errada: o problema está no que acontece \emph{depois} do bloqueio. Um teste adicional descartou que essas oclusões fossem um erro numérico (o raio batendo na própria superfície de onde parte): deslocar a origem do raio em até 1\% do tamanho da cena praticamente não mudou nada (PSNR médio de 27,51 para 27,54~dB). As oclusões são reais na malha; o que erra é a luz indireta, que é um valor aprendido por disco e não a luz do ponto atingido.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figs/toaster_decomposicao.png}
+\caption{Decomposição estimada pelo Ref-Gaussian na \textit{toaster}: albedo, parcela difusa, parcela especular, metalicidade, rugosidade e erro da imagem final. O metal e o pão são bem separados, mas o albedo tem cores falsas no metal e a rugosidade tem manchas sobre uma superfície que deveria ser uniforme; o halo claro à esquerda são Gaussianas fora do objeto.}
+\label{fig:decomposicao}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/toaster_envmap.png}
+\caption{Mapa de ambiente aprendido na \textit{toaster} (projeção equirretangular), reconstruído apenas a partir dos reflexos no objeto.}
+\label{fig:envmap}
+\end{figure}
+
+\textbf{A imagem fica fiel, mas os materiais saem ruidosos.} A Fig.~\ref{fig:decomposicao} mostra os mapas intermediários da \textit{toaster}. O método separa bem o que é metal (metalicidade alta e rugosidade baixa) do que é pão, e o erro da imagem final é pequeno. Os materiais, porém, têm defeitos que não aparecem na imagem: cores falsas no albedo do metal, manchas de rugosidade sobre uma superfície uniforme e um halo de Gaussianas fora do objeto. Isso concorda com a limitação apontada pelos autores (ruído nas propriedades de material) e importa para aplicações que reutilizam o material, como reiluminar o objeto ou inseri-lo em uma cena de realidade aumentada.
+
+\textbf{O ambiente é recuperado só pelos reflexos.} O mapa de luz do ambiente aprendido na \textit{toaster} (Fig.~\ref{fig:envmap}) mostra uma sala reconhecível, com janelas, luminárias, uma cama e uma poltrona, embora borrada nas regiões que quase não aparecem refletidas no objeto. É um indício de que a separação entre material e luz funciona nas regiões bem observadas.
 
 \textbf{O que isso muda nas propostas.} A transição brusca entre $V=0$ e $V=1$ é o que P1 suaviza, e a luz indireta aprendida é o que P2 pode substituir, buscando a luz no ponto em que o raio bate. Esses resultados reforçam P2 como a linha mais promissora.
 
@@ -177,12 +230,13 @@ Cena & Gaussianas / malha & PSNR & SSIM & LPIPS \\
 % =====================================================================
 \section{Conclusão}
 
-O Ref-Gaussian foi escolhido como ponto de partida da dissertação. O código oficial foi colocado para funcionar em um notebook com Windows e os resultados do artigo foram reproduzidos nas seis cenas do Shiny Blender, com SSIM médio idêntico e LPIPS médio a 0,001 dos publicados; com o checkpoint de 40 mil iterações, as duas cenas mais difíceis chegam ao nível do artigo. A análise dos erros mostra que eles se concentram onde o método usa a luz refletida pelo próprio objeto, e que a causa não é o teste de bloqueio em si, mas a luz indireta aprendida por disco. As propostas da dissertação, suavizar a visibilidade (P1) e calcular visibilidade e luz indireta direto nas Gaussianas (P2), atacam exatamente esse ponto.
+O Ref-Gaussian foi escolhido como ponto de partida da dissertação. O código oficial foi colocado para funcionar em um notebook com Windows e os resultados do artigo foram reproduzidos nas seis cenas do Shiny Blender, com SSIM médio idêntico e LPIPS médio a 0,001 dos publicados; com o checkpoint de 40 mil iterações, as duas cenas mais difíceis chegam ao nível do artigo, e a vantagem sobre o 3DGS original (4,1~dB na média) se confirma. A análise dos erros mostra que eles se concentram onde o método usa a luz refletida pelo próprio objeto, o que só acontece em objetos espelhados com partes que se refletem, e que a causa não é o teste de bloqueio em si, mas a luz indireta aprendida por disco. Os materiais estimados ainda saem ruidosos mesmo quando a imagem é fiel, o que limita aplicações como reiluminação. As propostas da dissertação, suavizar a visibilidade (P1) e calcular visibilidade e luz indireta direto nas Gaussianas (P2), atacam exatamente esse ponto.
 
 \begin{thebibliography}{00}
 \bibitem{kerbl2023} B. Kerbl, G. Kopanas, T. Leimkühler, and G. Drettakis, ``3D Gaussian splatting for real-time radiance field rendering,'' \textit{ACM Trans. Graph.}, vol. 42, no. 4, 2023.
 \bibitem{huang2024_2dgs} B. Huang, Z. Yu, A. Chen, A. Geiger, and S. Gao, ``2D Gaussian splatting for geometrically accurate radiance fields,'' in \textit{Proc. ACM SIGGRAPH}, 2024.
 \bibitem{yao2025refgaussian} Y. Yao, Z. Zeng, C. Gu, X. Zhu, and L. Zhang, ``Reflective Gaussian splatting,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2025.
+\bibitem{jiang2024gshader} Y. Jiang, J. Tu, Y. Liu, X. Gao, X. Long, W. Wang, and Y. Ma, ``GaussianShader: 3D Gaussian splatting with shading functions for reflective surfaces,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2024.
 \bibitem{ye2024dr} K. Ye, Q. Hou, and K. Zhou, ``3D Gaussian splatting with deferred reflection,'' in \textit{Proc. ACM SIGGRAPH}, 2024.
 \bibitem{verbin2022refnerf} D. Verbin, P. Hedman, B. Mildenhall, T. Zickler, J. T. Barron, and P. P. Srinivasan, ``Ref-NeRF: Structured view-dependent appearance for neural radiance fields,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2022.
 \bibitem{liu2023nero} Y. Liu, P. Wang, C. Lin, X. Long, J. Wang, L. Liu, T. Komura, and W. Wang, ``NeRO: Neural geometry and BRDF reconstruction of reflective objects from multiview images,'' \textit{ACM Trans. Graph.}, vol. 42, no. 4, 2023.
