@@ -52,7 +52,40 @@ O 3D Gaussian Splatting (3DGS)~\cite{kerbl2023} representa uma cena como um gran
 
 O 3DGS funciona mal com objetos espelhados. A cor de cada Gaussiana muda com o ângulo de visão de forma simplificada, o que não é suficiente para representar reflexos nítidos. O método acaba ``pintando'' o reflexo como se fosse geometria atrás da superfície.
 
-O Ref-Gaussian~\cite{yao2025refgaussian} resolve boa parte desse problema e é hoje um dos melhores métodos para objetos reflexivos. Por isso ele foi escolhido como \textit{baseline}, isto é, o método de referência que a dissertação pretende melhorar. Este relatório tem dois objetivos: explicar o método e as propostas de melhoria (Seção~\ref{sec:metodo}) e reproduzir os resultados do artigo antes de qualquer modificação (Seções~\ref{sec:exp} e~\ref{sec:resultados}).
+O Ref-Gaussian~\cite{yao2025refgaussian} resolve boa parte desse problema e é hoje um dos melhores métodos para objetos reflexivos. Por isso ele foi escolhido como \textit{baseline}, isto é, o método de referência que a dissertação pretende melhorar. Este relatório situa o método entre os trabalhos da área (Seção~\ref{sec:relacionados}), explica seu funcionamento e as propostas de melhoria (Seção~\ref{sec:metodo}) e reproduz os resultados do artigo antes de qualquer modificação (Seções~\ref{sec:exp} e~\ref{sec:resultados}).
+
+% =====================================================================
+\section{Trabalhos Relacionados}\label{sec:relacionados}
+
+\textbf{Campos de radiância neurais.} O NeRF~\cite{mildenhall2020nerf} representa a cena com uma rede neural que devolve cor e densidade para cada ponto e direção, e gera imagens acumulando essas amostras ao longo de cada raio. A qualidade é alta, mas cada imagem exige milhões de consultas à rede. Para objetos reflexivos, o Ref-NeRF~\cite{verbin2022refnerf} passou a descrever a cor em função da direção \emph{refletida} e não da direção de visão, separando uma parcela difusa de uma especular. O NeRO~\cite{liu2023nero} vai além: estima geometria, material e luz do ambiente e já trata a luz refletida pelo próprio objeto. Todos herdam o custo do NeRF: horas de treino e renderização longe do tempo real.
+
+\textbf{Gaussian Splatting.} O 3DGS~\cite{kerbl2023} troca a rede por Gaussianas explícitas que são projetadas na tela, o que permite renderizar em tempo real. A cor que muda com o ângulo é aproximada por harmônicos esféricos de grau baixo, que não representam reflexos nítidos. As Gaussianas 2D~\cite{huang2024_2dgs} achatam cada Gaussiana em um disco, melhorando a geometria e as normais, mas mantêm o mesmo modelo de cor.
+
+\textbf{Gaussian Splatting para reflexos.} O GaussianShader~\cite{jiang2024gshader} adiciona a cada Gaussiana uma função de sombreamento simplificada com a luz do ambiente. O 3DGS-DR~\cite{ye2024dr} calcula o reflexo por pixel, depois de projetar as normais na tela (\emph{deferred reflection}), o que gera reflexos mais nítidos, mas ignora a luz refletida pelo próprio objeto. O R3DG~\cite{gao2024r3dg} estima material, usa traçado de raios sobre os pontos para calcular oclusão e representa a luz indireta por um valor aprendido em cada ponto, com foco em reiluminação. O Ref-Gaussian~\cite{yao2025refgaussian} reúne essas ideias: discos 2D, material físico calculado por pixel e um teste de bloqueio do reflexo feito contra uma malha extraída das Gaussianas. Em paralelo, o 3DGRT~\cite{moenne2024_3dgrt} mostrou como traçar raios diretamente sobre Gaussianas, o que abre caminho para dispensar a malha.
+
+A Tabela~\ref{tab:relacionados} resume como cada trabalho trata o reflexo. A lacuna explorada nesta dissertação está na última coluna: os métodos rápidos ou ignoram a luz refletida pelo próprio objeto, ou a tratam com aproximações (um único raio contra uma malha auxiliar e uma luz indireta aprendida à parte).
+
+\begin{table}[t]
+\centering
+\caption{Resumo dos trabalhos relacionados: representação, modelo de reflexo e tratamento da luz refletida pelo próprio objeto (inter-reflexão).}
+\label{tab:relacionados}
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+Método & Representação & Reflexo & Inter-reflexão \\
+\midrule
+Ref-NeRF~\cite{verbin2022refnerf} & rede neural & cor pela direção refletida & não \\
+NeRO~\cite{liu2023nero} & rede neural (SDF) & material + luz do ambiente & sim (lento) \\
+3DGS~\cite{kerbl2023} & Gaussianas 3D & harmônicos esféricos & não \\
+2DGS~\cite{huang2024_2dgs} & Gaussianas 2D & harmônicos esféricos & não \\
+GaussianShader~\cite{jiang2024gshader} & Gaussianas 3D & sombreamento por Gaussiana & não \\
+3DGS-DR~\cite{ye2024dr} & Gaussianas 3D & reflexo por pixel & não \\
+R3DG~\cite{gao2024r3dg} & Gaussianas 3D & material + traçado de raios & raio + luz aprendida \\
+Ref-Gaussian~\cite{yao2025refgaussian} & Gaussianas 2D & material por pixel & 1 raio + malha \\
+\bottomrule
+\end{tabular}}
+\end{table}
 
 % =====================================================================
 \section{Solução Proposta}\label{sec:metodo}
@@ -94,7 +127,7 @@ A partir disso, a dissertação propõe investigar:
 Uma terceira direção, a extensão para objetos reflexivos em movimento, fica como trabalho futuro.
 
 % =====================================================================
-\section{Experimentos}\label{sec:exp}
+\section{Metodologia}\label{sec:exp}
 
 O objetivo desta etapa é \emph{replicar} o baseline, ou seja, verificar se os resultados do artigo se repetem quando o código é executado por outra pessoa, em outro computador.
 
@@ -104,7 +137,9 @@ O objetivo desta etapa é \emph{replicar} o baseline, ou seja, verificar se os r
 
 \textbf{Treino.} Cada cena foi treinada por 50 mil iterações, com as configurações padrão do código oficial. As primeiras 18 mil iterações usam um modo mais simples, que serve para estabilizar a forma do objeto; os reflexos entre partes do objeto são ativados a partir da iteração 20 mil.
 
-\textbf{Métricas.} Cada imagem de teste gerada pelo modelo é comparada com a imagem real usando três métricas comuns na área: PSNR, que mede o erro pixel a pixel (maior é melhor); SSIM, que mede a semelhança de estrutura (maior é melhor); e LPIPS, que mede a diferença percebida por uma rede neural treinada para imitar a percepção humana (menor é melhor).
+\textbf{Métricas.} Cada imagem de teste gerada pelo modelo é comparada com a imagem real usando três métricas comuns na área: PSNR, que mede o erro pixel a pixel (maior é melhor); SSIM, que mede a semelhança de estrutura (maior é melhor); e LPIPS, que mede a diferença percebida por uma rede neural treinada para imitar a percepção humana (menor é melhor). Os valores de outros métodos são os da Tabela~1 do artigo~\cite{yao2025refgaussian}, obtidos com as mesmas cenas e métricas.
+
+\textbf{Análises adicionais.} Além da média, quatro análises foram feitas para entender onde e por que o método erra: (i) o PSNR de cada uma das 200 imagens de teste, para achar as piores vistas; (ii) a reavaliação dos checkpoints salvos (30k, 40k, 48k e 50k), cada um com a malha da sua própria iteração, para separar o efeito do método do efeito do protocolo de avaliação; (iii) a exportação, pixel a pixel, da visibilidade $V$, da luz direta e da luz indireta, e do erro em cada caso; e (iv) um teste em que a origem do raio de visibilidade é deslocada na direção do próprio raio refletido, para verificar se as oclusões são reais ou um erro numérico. Os mapas de material e o mapa de ambiente aprendidos foram inspecionados para a análise qualitativa.
 
 % =====================================================================
 \section{Resultados e Discussão}\label{sec:resultados}
@@ -189,6 +224,8 @@ Ref-Gaussian (replicação) & 36,07 & \textbf{31,25} & 34,29 & 30,45 & \textbf{4
 \label{fig:curvas}
 \end{figure}
 
+\textbf{Evolução em relação à entrega anterior.} Na entrega anterior, apenas duas cenas (\textit{toaster} e \textit{ball}) estavam replicadas, com PSNR médio 0,74~dB abaixo do artigo nessas cenas, e a principal hipótese para o erro era a de raios que ``escapavam'' do objeto quando deveriam ser bloqueados. Agora as seis cenas estão replicadas, a diferença média caiu para 0,57~dB, os resultados foram comparados com os outros métodos do artigo, e três novas análises (checkpoints, mapa de visibilidade e deslocamento do raio) mostraram que parte do desvio vem do protocolo de avaliação e que a hipótese inicial estava errada: o erro está na luz indireta aprendida.
+
 \textbf{Os resultados do artigo se repetem.} A Tabela~\ref{tab:replicacao} compara os valores obtidos com os publicados nas seis cenas. Na média, o SSIM (0,973) é idêntico ao do artigo, o LPIPS difere em 0,001 (0,057 contra 0,056) e o PSNR fica 0,57~dB abaixo (34,46 contra 35,04~dB, Tabela~\ref{tab:replicacao}). Em \textit{car} e \textit{teapot} os resultados ficam iguais ou acima dos publicados; em \textit{coffee} e \textit{toaster} ficam a menos de 0,6~dB; quase todo o déficit vem de \textit{helmet} ($-1{,}87$~dB) e \textit{ball} ($-0{,}94$~dB).
 
 \textbf{A vantagem sobre os outros métodos se mantém.} A Tabela~\ref{tab:contexto} coloca a replicação ao lado dos métodos comparados no artigo. Mesmo com o déficit de 0,57~dB, ela fica 4,1~dB acima do 3DGS original na média (34,46 contra 30,36~dB), com as maiores diferenças justamente nos objetos mais espelhados: +8,4~dB na \textit{ball} e +6,5~dB na \textit{toaster}. Em quatro das seis cenas (\textit{ball}, \textit{car}, \textit{teapot} e \textit{toaster}) o resultado fica acima do melhor método anterior ao Ref-Gaussian segundo o próprio artigo (3DGS-DR~\cite{ye2024dr}); em \textit{coffee} e \textit{helmet} fica abaixo dele. Na \textit{teapot}, quase convexa e pouco espelhada, todos os métodos ficam entre 45 e 47~dB, e a escolha do método quase não importa.
@@ -233,6 +270,7 @@ Ref-Gaussian (replicação) & 36,07 & \textbf{31,25} & 34,29 & 30,45 & \textbf{4
 O Ref-Gaussian foi escolhido como ponto de partida da dissertação. O código oficial foi colocado para funcionar em um notebook com Windows e os resultados do artigo foram reproduzidos nas seis cenas do Shiny Blender, com SSIM médio idêntico e LPIPS médio a 0,001 dos publicados; com o checkpoint de 40 mil iterações, as duas cenas mais difíceis chegam ao nível do artigo, e a vantagem sobre o 3DGS original (4,1~dB na média) se confirma. A análise dos erros mostra que eles se concentram onde o método usa a luz refletida pelo próprio objeto, o que só acontece em objetos espelhados com partes que se refletem, e que a causa não é o teste de bloqueio em si, mas a luz indireta aprendida por disco. Os materiais estimados ainda saem ruidosos mesmo quando a imagem é fiel, o que limita aplicações como reiluminação. As propostas da dissertação, suavizar a visibilidade (P1) e calcular visibilidade e luz indireta direto nas Gaussianas (P2), atacam exatamente esse ponto.
 
 \begin{thebibliography}{00}
+\bibitem{mildenhall2020nerf} B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi, and R. Ng, ``NeRF: Representing scenes as neural radiance fields for view synthesis,'' in \textit{Proc. Eur. Conf. Comput. Vis. (ECCV)}, 2020.
 \bibitem{kerbl2023} B. Kerbl, G. Kopanas, T. Leimkühler, and G. Drettakis, ``3D Gaussian splatting for real-time radiance field rendering,'' \textit{ACM Trans. Graph.}, vol. 42, no. 4, 2023.
 \bibitem{huang2024_2dgs} B. Huang, Z. Yu, A. Chen, A. Geiger, and S. Gao, ``2D Gaussian splatting for geometrically accurate radiance fields,'' in \textit{Proc. ACM SIGGRAPH}, 2024.
 \bibitem{yao2025refgaussian} Y. Yao, Z. Zeng, C. Gu, X. Zhu, and L. Zhang, ``Reflective Gaussian splatting,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2025.
@@ -240,6 +278,7 @@ O Ref-Gaussian foi escolhido como ponto de partida da dissertação. O código o
 \bibitem{ye2024dr} K. Ye, Q. Hou, and K. Zhou, ``3D Gaussian splatting with deferred reflection,'' in \textit{Proc. ACM SIGGRAPH}, 2024.
 \bibitem{verbin2022refnerf} D. Verbin, P. Hedman, B. Mildenhall, T. Zickler, J. T. Barron, and P. P. Srinivasan, ``Ref-NeRF: Structured view-dependent appearance for neural radiance fields,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2022.
 \bibitem{liu2023nero} Y. Liu, P. Wang, C. Lin, X. Long, J. Wang, L. Liu, T. Komura, and W. Wang, ``NeRO: Neural geometry and BRDF reconstruction of reflective objects from multiview images,'' \textit{ACM Trans. Graph.}, vol. 42, no. 4, 2023.
+\bibitem{gao2024r3dg} J. Gao, C. Gu, Y. Lin, Z. Li, H. Zhu, X. Cao, L. Zhang, and Y. Yao, ``Relightable 3D Gaussians: Realistic point cloud relighting with BRDF decomposition and ray tracing,'' in \textit{Proc. Eur. Conf. Comput. Vis. (ECCV)}, 2024.
 \bibitem{moenne2024_3dgrt} N. Moenne-Loccoz, A. Mirzaei, O. Perel, R. de Lutio, J. M. Esturo, G. State, S. Fidler, N. Sharp, and Z. Gojcic, ``3D Gaussian ray tracing: Fast tracing of particle scenes,'' \textit{ACM Trans. Graph.}, vol. 43, no. 6, 2024.
 \end{thebibliography}
 
