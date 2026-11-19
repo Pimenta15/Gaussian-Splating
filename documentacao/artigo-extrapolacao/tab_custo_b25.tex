@@ -1,0 +1,24 @@
+\begin{table*}[t]
+\centering
+\caption{Correções aplicadas ao modelo já treinado (treino abaixo de 25°), sem retreino: tempo na GPU, tamanho médio do modelo em precisão simples e qualidade por grupo, média de 6 cenas. Em negrito, o melhor de cada coluna de qualidade. Para comparação, o retreino com vistas de cima chega a 28,6 e 29,1~dB na faixa e acima, e o Ref-Gaussian exige um novo treino cerca de 1,9 vez mais longo que o do 3DGS.}
+\label{tab:custo25}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l cc ccc c}
+\toprule
+ & \multicolumn{2}{c}{Custo} & \multicolumn{3}{c}{PSNR (dB)$\uparrow$} & LPIPS$\downarrow$ \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-6}\cmidrule(lr){7-7}
+Correção & Tempo (s) & Tamanho (MB) & Faixa & Acima & De cima & De cima \\
+\midrule
+3DGS original (grau 3) & -- & 61{,}6 & \textbf{26{,}73} & 22{,}67 & 20{,}90 & 0{,}256 \\
+\midrule
+Truncamento, grau 0 & 0{,}13 & 14{,}6 & 24{,}98 & 22{,}53 & 20{,}93 & \textbf{0{,}246} \\
+Truncamento, grau 1 & 0{,}07 & 24{,}0 & 25{,}63 & \textbf{23{,}03} & \textbf{21{,}28} & 0{,}247 \\
+Truncamento, grau 2 & 0{,}06 & 39{,}7 & 26{,}19 & 23{,}02 & 21{,}18 & 0{,}248 \\
+Grau adaptativo~\cite{papantonakis2024reducing} & 1{,}16 & 54{,}5 & 26{,}73 & 22{,}67 & 20{,}90 & 0{,}255 \\
+Projeção global & 0{,}07 & 61{,}6 & 26{,}71 & 22{,}89 & 21{,}03 & 0{,}249 \\
+Projeção global + grau adapt. & 0{,}19 & 57{,}8 & 26{,}70 & 22{,}90 & 21{,}04 & 0{,}249 \\
+Projeção por visibilidade & 1{,}19 & 61{,}6 & 26{,}67 & 22{,}95 & 20{,}98 & 0{,}247 \\
+Projeção por visib. + grau adapt. & 1{,}30 & 53{,}1 & 26{,}65 & 22{,}95 & 20{,}98 & 0{,}247 \\
+\bottomrule
+\end{tabular}
+\end{table*}

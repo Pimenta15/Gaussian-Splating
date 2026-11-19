@@ -1,0 +1,116 @@
+\section{Resultados}\label{sec:resultados}
+
+\input{tab_principal_b25.tex}
+
+\subsection{QP1: quanto se perde e quanto vale a cobertura}
+
+A Fig.~\ref{fig:curva} mostra o PSNR médio das seis cenas em função da elevação da vista de avaliação. Dentro da faixa de treino, o 3DGS atinge 26,7~dB. Nas vistas de teste acima da faixa cai para 22,7~dB e nas vistas de cima, para 20,9~dB (Tabela~\ref{tab:principal25}): 5,8~dB perdidos apenas pela mudança de altura da câmera, com o LPIPS quase dobrando (de 0,143 para 0,256). A queda começa logo acima de 25° e continua até a vista de topo.
+
+O modelo de referência, treinado com o hemisfério todo, mostra que a perda decorre da cobertura e não da dificuldade das vistas: com ele, as vistas acima de 25° atingem 29,1~dB, tanto quanto as de baixo (28,6~dB), enquanto o modelo da faixa fica em 22,7~dB nelas. Com treino abaixo de 15° (de 14 a 21 vistas por cena), a perda cresce: 22,7~dB na faixa, 19,0~dB acima e 17,4~dB de cima, e a distância até a referência acima da faixa passa de 6,5~dB para 10,2~dB. Para captura, isso quantifica o valor de cada grau adicional de elevação coberto.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/curva_elevacao_b25.pdf}
+\caption{PSNR médio das seis cenas por elevação da vista de avaliação (intervalos de 5°), com treino só abaixo de 25° (área azul). Todas as variantes saem do mesmo modelo treinado; a linha verde é o modelo de referência, treinado com o hemisfério todo.}
+\label{fig:curva}
+\end{figure}
+
+\subsection{QP2: oráculos mostram que cor e geometria se compensam}
+
+\input{tab_decomp_b25.tex}
+
+O oráculo de cor, que reajusta todos os SH com a geometria congelada, eleva o PSNR de 21,0 para 27,1~dB de cima e de 22,7 para 29,0~dB acima (Tabela~\ref{tab:decomp25}), o nível da faixa filmada; a projeção fica longe desse teto. A Fig.~\ref{fig:qualitativo} mostra o efeito: mesmo com a cor ajustada apenas em vistas do lado oposto do objeto, a vista de 89° perde as manchas do 3DGS.
+
+Os controles mudam a interpretação desse resultado (Tabela~\ref{tab:oraculos25}). Reajustar apenas a geometria, com a cor congelada, recupera ainda mais: 8,0~dB de cima. Reajustar apenas a cor constante recupera 4,1~dB. No controle mais rigoroso, com ajuste num lado do objeto e avaliação no outro, os ganhos caem para 2,3~dB (cor) e 3,1~dB (geometria), mas permanecem positivos. Cor e geometria, portanto, se substituem: a informação contida nas vistas de cima corrige a imagem por qualquer um dos dois caminhos. O modelo tem capacidade para representar a imagem correta; falta a informação.
+
+\input{tab_oraculos_b25.tex}
+
+\subsection{QP2: a geometria não piora de cima, mas está errada em todas as alturas}\label{sec:geometria}
+
+O Shiny Blender fornece, para cada vista, a silhueta e o mapa de normais de referência, o que permite medir a geometria sem passar pela cor. Para cada vista de avaliação, renderizamos a opacidade acumulada e a profundidade esperada do modelo, derivamos as normais da profundidade (com suavização de 9~px) e as comparamos com a referência. Aplicado à profundidade de referência do conjunto, o mesmo cálculo erra entre 10° e 20°, limite imposto pela quantização da disparidade fornecida.
+
+A Tabela~\ref{tab:geometria25} resume o resultado. A silhueta tem o mesmo IoU nos três grupos (0,91, 0,90 e 0,91). O erro das normais é alto em todos eles, de 54° a 63° em média: em objetos reflexivos, o 3DGS tende a imitar o reflexo com Gaussianas fora da superfície, e a profundidade resulta irregular. Esse erro é \emph{menor} de cima (53,8°) do que na faixa filmada (63,4°), provavelmente porque de cima predominam superfícies planas voltadas para a câmera. Uma segunda estimativa, sem suavização, confirma o quadro: tomando como normal o eixo mais curto de cada Gaussiana, composto por alfa, como no GaussianShader~\cite{jiang2024gshader}, o erro é de 55° na faixa, 48° acima e 41° de cima (Tabela~\ref{tab:normais25}).
+
+\input{tab_geometria_b25.tex}
+
+O modelo de referência separa duas componentes da geometria. Com vistas de cima no treino, a silhueta melhora (IoU de cima de 0,91 para 0,98) e a imagem também (+6,5~dB acima da faixa). A orientação da superfície, porém, praticamente não muda: o erro das normais de cima fica em 52,5°, contra 53,8° do modelo da faixa, embora essas vistas façam parte do treino dele. Um 3DGS que reproduz corretamente a imagem de cima também tem a superfície errada; no 3DGS, uma imagem correta não exige normal correta.
+
+Junto com os oráculos, isso descreve o mecanismo. Em objetos reflexivos, o 3DGS não recupera a superfície em nenhuma altura, nem quando treinado com todas. Ele reproduz as vistas filmadas com uma geometria errada e uma cor dependente de vista que a compensa, e essa combinação só foi ajustada para as direções filmadas. De cima, a geometria não piora, mas a compensação deixa de valer.
+
+\subsection{QP3: modelar a reflexão corrige a forma, não a aparência de cima}\label{sec:refgs}
+
+O Ref-Gaussian~\cite{yao2025refgaussian} calcula o reflexo a partir da normal da superfície e de um único mapa de ambiente para a cena. Em princípio, isso permitiria reaproveitar o ambiente visto refletido numa parte do objeto para prever o reflexo de outra parte, vista de outro ângulo.
+
+A geometria do Ref-Gaussian é de fato correta. Treinado com o hemisfério todo, ele erra as normais em 5,7° na faixa e 5,2° acima, na média das seis cenas, contra 41° a 63° do 3DGS conforme a estimativa e o grupo (Tabela~\ref{tab:normais25}). Treinado apenas na faixa, mantém a superfície correta também de cima: 11,6° de erro, contra 56,7° (profundidade) e 43,2° (eixo) do 3DGS nas mesmas três cenas.
+
+\input{tab_normais_b25.tex}
+
+\textbf{Imagem.} Treinado só na faixa, o Ref-Gaussian melhora a imagem em todas as alturas, mas a vantagem diminui com a elevação: +2,1~dB na faixa (24,5 contra 22,3~dB nas mesmas três cenas), +1,7~dB acima e +0,7~dB de cima (19,3 contra 18,6~dB). No \textit{helmet}, fica abaixo do 3DGS de cima (20,6 contra 21,2~dB). Da faixa para cima, o Ref-Gaussian perde 5,2~dB e o 3DGS, 3,7~dB. A comparação é equilibrada em treino: o Ref-Gaussian da faixa usa 28 mil iterações, e o 3DGS, 30 mil. A Fig.~\ref{fig:qualitativo} mostra que, de cima, o Ref-Gaussian não apresenta os riscos brancos do 3DGS, mas a pintura e o metal saem borrados.
+
+\textbf{A informação existe, e não são as iterações.} Treinado com o hemisfério todo, o mesmo método atinge, acima da faixa, 30,8~dB nessas três cenas, contra 21,0~dB do treinado só na faixa. O modelo completo usa o cronograma original de 50 mil iterações, e por isso avaliamos também seus \textit{checkpoints} intermediários (Tabela~\ref{tab:refgsiter25}). Com 30 mil iterações, ele já atinge 31,1~dB acima da faixa nessas cenas, e na média das seis cenas a diferença entre 30 e 50 mil iterações é de 0,05~dB (de $-$0,9 a +0,5~dB por cena; no \textit{helmet} e no \textit{toaster}, 30 mil é melhor). A distância de cerca de 10~dB entre o modelo da faixa e o completo vem, portanto, das vistas de cima, e não do treino mais longo.
+
+\input{tab_refgs_iteracoes_b25.tex}
+
+\textbf{O ambiente refletido de cima já foi observado.} Para cada pixel do objeto, calculamos a direção refletida com a normal de referência e marcamos, numa grade da esfera com células de 5°, as direções que aparecem nas vistas de treino. Em todas as seis cenas, 100\% das direções refletidas nas vistas de cima já aparecem em alguma vista de treino; no \textit{car}, no \textit{helmet} e no \textit{ball}, com a mesma densidade das vistas da faixa. Superfícies curvas refletem quase a esfera inteira de qualquer ponto de vista. Para um modelo com mapa de ambiente compartilhado, a informação sobre a iluminação de cima está disponível.
+
+\textbf{O que falta: oráculos por componente.} Para identificar a parte da aparência que falha, aplicamos ao Ref-Gaussian o mesmo protocolo de oráculos do 3DGS: com a geometria congelada, reajustamos com as vistas de cima de índice par apenas o material (cor base, cor difusa, intensidade do reflexo, rugosidade e metalicidade de cada Gaussiana), apenas o mapa de ambiente, apenas a luz indireta aprendida, ou as três partes, e avaliamos nas vistas de índice ímpar (1000 passos de Adam com as taxas do treino). A Tabela~\ref{tab:refgsoraculos25} resume o resultado. O material é a componente que mais recupera: +1,6~dB em média, contra +0,6~dB do mapa de ambiente e +0,2~dB da luz indireta. Isso concorda com o teste de cobertura: o ambiente foi observado; o que não foi observado é como cada superfície voltada para cima reflete. Com câmeras abaixo de 25°, uma superfície horizontal só é vista a mais de 65° da sua normal, e sua rugosidade e intensidade de reflexo são ajustadas apenas nesses ângulos rasantes.
+
+\input{tab_refgs_oraculos_b25.tex}
+
+Mesmo reajustando toda a aparência, porém, o Ref-Gaussian recupera apenas 2,7~dB de cima, contra 5,8~dB do oráculo de cor do 3DGS. A aparência do Ref-Gaussian é restrita pela física: a cor é calculada a partir da normal e do mapa de ambiente, e não pode compensar livremente uma geometria imperfeita, como os SH do 3DGS fazem. A geometria residual pesa mais nesse caso, porque o reflexo amplifica o erro de orientação: num espelho, uma normal desviada de $\theta$ desvia a direção refletida de $2\theta$, e os 11,6° de erro de normal de cima podem deslocar o reflexo em mais de 20°. A restrição física que dá ao Ref-Gaussian uma geometria correta é a mesma que o impede de compensar, pela aparência, o que falta de cima.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.8\textwidth]{figs/qualitativo_cima.pdf}
+\caption{A vista mais alta de cada cena (89°), com treino só abaixo de 25°. A projeção remove pouco das manchas do 3DGS. No oráculo de cor, a geometria é a mesma e só a cor foi reajustada, em vistas de cima do lado oposto do objeto; esta vista não entrou no ajuste. O Ref-Gaussian, treinado nas mesmas vistas, tem a superfície correta, mas a aparência de cima continua borrada.}
+\label{fig:qualitativo}
+\end{figure*}
+
+\subsection{QP4: a projeção é segura na faixa, mas recupera pouco}
+
+\textbf{Dentro da faixa.} As duas projeções mudam o PSNR em menos de 0,1~dB (0,02~dB a global e 0,06~dB a por visibilidade), como prevê a garantia da Seção~\ref{sec:metodo}, e o LPIPS melhora ligeiramente. Descartar toda a dependência de vista (grau 0) custa 1,8~dB: os reflexos observados pelas câmeras são reais e precisam ser mantidos.
+
+\textbf{Acima da faixa.} A projeção por visibilidade ganha 0,28~dB em média. O intervalo de confiança de 95\% por \textit{bootstrap} nas 642 vistas vai de 0,25 a 0,31~dB, e 84\% das vistas melhoram. Esse é o efeito previsto: as combinações de coeficientes que nenhuma câmera fixou são removidas, e com elas parte do reflexo inventado. O ganho, porém, é pequeno diante dos 4~dB perdidos e concentra-se numa cena: no \textit{teapot}, de cor quase uniforme, a projeção ganha 1,0~dB; nas outras cinco, entre 0,03 e 0,27~dB (Tabela~\ref{tab:cenas25}).
+
+\input{tab_cenas_b25.tex}
+
+\textbf{De cima.} Nenhuma variante funciona. A projeção ganha 0,08~dB na média das cenas, apenas 48\% das vistas melhoram e em três cenas o PSNR piora. O grau 0 é o resultado mais revelador: sem nenhuma dependência de vista, o modelo atinge 20,93~dB de cima, o mesmo que o original (20,90~dB). Vistos de cima, os 15 coeficientes direcionais aprendidos valem tanto quanto a ausência de reflexo. A Tabela~\ref{tab:lambda} mostra que o resultado não depende de $\lambda$: com $10^{-3}$ a projeção quase não atua, e com $10^{-1}$ custa 0,3~dB na faixa sem ganhar de cima.
+
+\input{tab_lambda.tex}
+
+Com a faixa de 15°, a projeção global continua neutra na faixa (22,68 contra 22,69~dB), mas a projeção por visibilidade passa a piorá-la em 0,25~dB (IC~95\%: 0,20 a 0,29~dB) e não ganha fora dela ($-$0,02~dB acima e $-$0,13~dB de cima). Com cerca de 17 câmeras, as vistas de teste da faixa ficam entre as direções de treino, onde a garantia não vale, e a versão por visibilidade, que usa só as câmeras que veem cada Gaussiana, é mais agressiva justamente onde há menos câmeras.
+
+\subsection{QP4: custo e qualidade das correções leves}
+
+\input{tab_custo_b25.tex}
+
+A Tabela~\ref{tab:custo25} e a Fig.~\ref{fig:custo} comparam as correções aplicadas ao modelo já treinado. Elas formam um compromisso entre preservar a faixa filmada e melhorar o que está fora dela. O truncamento para grau 1 ou 2 é o que mais melhora as vistas fora da faixa (+0,36 e +0,35~dB acima; +0,38 e +0,28~dB de cima) e reduz o modelo de 61,6 para 24,0 e 39,7~MB, mas custa 1,1 e 0,5~dB dentro da faixa. A projeção não custa nada na faixa ($-$0,02~dB a global e $-$0,06~dB a por visibilidade) e ganha de 0,22 a 0,28~dB acima dela, mas só de 0,08 a 0,13~dB de cima, sem reduzir o tamanho. O grau adaptativo, com a tolerância usada, preserva a qualidade e reduz o modelo em 12\% (54,5~MB); depois da projeção por visibilidade, a redução chega a 14\% (53,1~MB), porque a projeção atenua parte dos termos não observados. Todas as correções custam de centésimos de segundo a pouco mais de 1~s na GPU, e a projeção global, a única que dispensa câmeras e GPU, roda em 0,6~s em CPU no veículo real de 273 mil Gaussianas. Nenhuma correção leve recupera mais de 0,4~dB dos 5,8~dB perdidos de cima.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/custo_qualidade_b25.pdf}
+\caption{Compromisso das correções sem retreino, média das seis cenas: variação de PSNR dentro da faixa filmada (eixo horizontal) contra variação acima dela (eixo vertical), em relação ao 3DGS original. O rótulo traz o tamanho do modelo. As projeções preservam a faixa; o truncamento ganha um pouco mais fora dela, ao custo da faixa.}
+\label{fig:custo}
+\end{figure}
+
+\subsection{Veículo real}
+
+No Porsche 911 (273 mil Gaussianas, câmeras entre 0,4° e 3,8°), não há referência de cima. Medimos então quanto a projeção global altera a imagem, comparando as renderizações antes e depois dela numa volta completa em cada elevação. Na faixa filmada (2°), o PSNR entre as duas é de 49,6~dB: a mudança é imperceptível, como prevê a garantia. Acima, cai para 37,8~dB a 20°, 35,1~dB a 45° e 39,0~dB a 89°. A mudança existe, mas é pequena, e a Fig.~\ref{fig:teaser} mostra que ela não remove as manchas do teto e do capô. O comportamento é o mesmo do laboratório sintético. A ferramenta de linha de comando aplica essa projeção ao arquivo \texttt{.ply} do veículo em 0,6~s, em CPU.
+
+% =====================================================================
+\section{Discussão}\label{sec:discussao}
+
+\textbf{Respostas às questões de pesquisa.} (QP1) A perda fora da faixa filmada é grande, 5,8~dB de cima com a faixa de 25° e 10,2~dB acima da faixa com a de 15°, e decorre da cobertura, não da dificuldade das vistas. (QP2) Ela não vem de uma geometria que piora onde nenhuma câmera olhou: silhueta e normais vistas de cima não são piores que na faixa. Em objetos reflexivos, o 3DGS reproduz as vistas filmadas com uma superfície errada e uma cor que a compensa; de cima, essa compensação deixa de valer, e reajustar com vistas de cima tanto a cor quanto a forma devolve a qualidade. (QP3) O Ref-Gaussian corrige a forma (11,6° de erro de normal de cima, contra 56,7° do 3DGS) e melhora a imagem, mas a vantagem cai de 2,1~dB na faixa para 0,7~dB de cima. O ambiente refletido de cima já havia sido observado; dentro da aparência, o que mais falta é o material das superfícies voltadas para cima, e a restrição física impede que a aparência compense o erro de geometria que resta, amplificado pelo reflexo. Com as vistas de cima, o mesmo método ganha cerca de 10~dB acima da faixa, e as iterações a mais não explicam esse ganho. (QP4) Correções aplicadas ao modelo treinado, sem informação nova, recuperam no máximo 0,4~dB. A pergunta ``cor ou geometria?'' pressupõe que as duas sejam separáveis; no 3DGS, em superfícies reflexivas, não são, e a mesma imagem filmada admite muitas combinações de forma e cor.
+
+\textbf{Quando usar cada correção.} Os resultados indicam uma escolha por cenário. \textit{(a) Visualização de anúncios na web ou em celular}, com orçamento de memória e de banda. Quando o comprador olha sobretudo ao redor do veículo, a projeção global é a escolha: não altera a faixa filmada, reduz os reflexos inventados logo acima dela, roda em CPU sobre o arquivo final e pode ser seguida do grau adaptativo para economizar memória. Quando o tamanho pesa mais e o visualizador permite órbita livre, o truncamento para grau 2 troca 0,5~dB na faixa por 0,35~dB acima dela e 36\% de memória a menos (Tabela~\ref{tab:custo25}). Em ambos os casos, a câmera do visualizador deve ficar limitada à faixa coberta, já que nenhuma correção leve recupera a vista de topo. \textit{(b) Inspeção de veículos}, em que inventar detalhes é inaceitável: correções gerativas~\cite{wu2025difix3d,liu2024viewextrapolator} não são adequadas, e o caminho é sinalizar as vistas extrapoladas ou capturar a altura que falta; a matriz de Gram fornece essa sinalização por Gaussiana. \textit{(c) Simulação a partir de gravações de direção}, que precisa de vistas distantes da trajetória: correções leves são insuficientes, e a informação precisa vir de priors gerativos~\cite{wang2025freevs} ou de gravações com múltiplas passagens~\cite{han2025euvs}. Em todos os casos, um modelo físico como o Ref-Gaussian melhora a geometria e a imagem dentro e perto da faixa, ao custo de um treino cerca de 2,4 vezes mais longo (47 contra 20~min por cena na mesma GPU), e é a base mais promissora para incorporar conhecimento prévio sobre materiais.
+
+\textbf{Extensão para cenas 4D automotivas.} O problema estudado aqui é mais severo em cenas dinâmicas de direção. As câmeras são fixas no veículo, cada instante é observado de um único conjunto de alturas, e os agentes em movimento são vistos de ângulos ainda mais restritos. Três elementos deste trabalho se estendem diretamente a esse caso. Primeiro, a análise de condicionamento: representações dinâmicas baseadas em Gaussianas mantêm cor por SH, inclusive variável no tempo~\cite{yan2024streetgs,wu2024gs4d}, e a matriz de Gram de cada Gaussiana pode ser calculada por janela de tempo, com os mesmos pesos de visibilidade obtidos pelo rasterizador. Segundo, o protocolo: simuladores como o CARLA~\cite{dosovitskiy2017carla} fornecem referência exata de qualquer altura, o que permite repetir o controle de cobertura e os oráculos em cenas dinâmicas, enquanto conjuntos reais com múltiplas passagens~\cite{han2025euvs} validam o resultado. Terceiro, a decomposição por oráculos, que em 4D separaria aparência, forma e movimento. Representações com primitivas explícitas são a base natural para essa extensão, porque cada Gaussiana tem posição, movimento e cor próprios, o que permite os diagnósticos por primitiva usados aqui, difíceis de aplicar a representações implícitas.
+
+\textbf{Limitações.} (i) Os oráculos usam as vistas de referência de cima e medem um teto, não um método; como cor e forma se substituem, nenhum isola uma causa sozinho, e a conclusão decorre da combinação deles com a medida direta da geometria. (ii) O 3DGS não tem normal própria; as duas estimativas usadas (profundidade e eixo mais curto) concordam, mas são aproximações. (iii) As métricas de imagem são calculadas na imagem inteira com fundo branco, o que soma o fundo, fácil, às médias. (iv) As cenas sintéticas têm materiais muito reflexivos; veículos reais combinam pintura, vidro e plástico. (v) Cada configuração foi treinada com uma única semente; os intervalos de confiança refletem a variação entre vistas, não entre treinos. (vi) Por custo de GPU, o Ref-Gaussian foi treinado na faixa em três cenas e com 28 mil iterações; o controle com os \textit{checkpoints} do modelo completo indica que as iterações pesam pouco, mas o cronograma escalado não é idêntico ao original. (vii) A garantia da projeção vale nas direções de treino; com a faixa de 15°, a versão por visibilidade piora as vistas de teste da própria faixa, e só a global permanece neutra. (viii) Os oráculos do Ref-Gaussian usam 1000 passos, contra 3000 nos do 3DGS, e mantêm a malha usada na luz indireta; seus ganhos são, portanto, limites inferiores do que cada componente poderia recuperar.
+
+\textbf{Trabalhos futuros.} (i) Completar a decomposição do Ref-Gaussian com um oráculo de geometria (posições, formas e normais), que mediria quanto do erro de cima vem do desvio residual das normais amplificado pelo reflexo. (ii) Aprender um prior de materiais com objetos sintéticos observados de todos os ângulos e usá-lo dentro do Ref-Gaussian, que já tem geometria e ambiente corretos e onde o material é a componente que mais falta. (iii) Repetir o protocolo em cenas dinâmicas de direção, com o CARLA e com conjuntos reais de múltiplas passagens. (iv) Comparar, no mesmo protocolo, correções gerativas como Difix3D+~\cite{wu2025difix3d}, medindo também quanto elas inventam. (v) Usar a matriz de Gram como mapa de confiança por Gaussiana, para guiar a captura e sinalizar vistas extrapoladas. (vi) Repetir os treinos com várias sementes e medir as métricas só nos pixels do objeto.
+
+% =====================================================================
+\section{Conclusão}\label{sec:conclusao}
+
+Este trabalho mediu, num cenário controlado e com foco no domínio automotivo, o que acontece quando um modelo 3DGS treinado com vistas numa faixa estreita de elevação é visto de cima. A perda média é de 5,8~dB de PSNR com a faixa de 25° e cresce com faixas mais estreitas. A análise da matriz de Gram mostra que uma faixa estreita deixa a maior parte dos coeficientes de cor indeterminada, e uma projeção sem treino, com garantia de alterar pouco as direções observadas, remove esses coeficientes em menos de 1~s. Ela melhora as vistas logo acima da faixa (+0,28~dB, 84\% das vistas), mas quase nada de cima. Oráculos e a medida direta da geometria mostram o motivo: a geometria vista de cima não é pior que a da faixa, mas está errada em todas as alturas, e o modelo reproduz as vistas filmadas compensando-a com a cor. O Ref-Gaussian, modelo de reflexão baseado em física, corrige a forma (12° de erro de normal de cima, contra 57°), mas perde de cima tanto quanto o 3DGS, embora o ambiente refletido de cima já tivesse aparecido no treino. Oráculos por componente mostram que, na aparência dele, o que mais falta é o material das superfícies vistas só de raspão, e que a restrição física, que garante a forma correta, impede a aparência de compensar o erro de normal que resta. Com as vistas de cima, o mesmo método ganha cerca de 10~dB, e o controle por \textit{checkpoints} mostra que esse ganho não vem das iterações. Fora do ângulo filmado falta informação, não ajuste. Correções leves têm lugar em visualização com orçamento de memória, desde que acompanhadas da limitação do ponto de vista; vistas distantes exigem captura adicional ou conhecimento prévio. A extensão natural é o caso dinâmico das gravações de direção, em que a cobertura limitada é a regra.

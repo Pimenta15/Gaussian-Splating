@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\caption{Geometria medida contra a referência do Shiny Blender, treino abaixo de 25°: IoU da silhueta e erro angular médio (graus) das normais derivadas da profundidade renderizada. F: dentro da faixa; A: acima; C: de cima.}
+\label{tab:geometria25}
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\begin{tabular}{l ccc ccc}
+\toprule
+ & \multicolumn{3}{c}{IoU da silhueta$\uparrow$} & \multicolumn{3}{c}{Erro da normal (°)$\downarrow$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Cena & F & A & C & F & A & C \\
+\midrule
+\textit{ball} & 0{,}903 & 0{,}877 & 0{,}901 & 58{,}1 & 58{,}1 & 52{,}8 \\
+\textit{car} & 0{,}925 & 0{,}957 & 0{,}967 & 63{,}2 & 59{,}7 & 55{,}7 \\
+\textit{coffee} & 0{,}936 & 0{,}958 & 0{,}958 & 58{,}4 & 54{,}4 & 51{,}3 \\
+\textit{helmet} & 0{,}957 & 0{,}953 & 0{,}961 & 66{,}9 & 62{,}1 & 53{,}7 \\
+\textit{teapot} & 0{,}992 & 0{,}994 & 0{,}993 & 58{,}9 & 54{,}4 & 48{,}9 \\
+\textit{toaster} & 0{,}741 & 0{,}665 & 0{,}674 & 74{,}9 & 69{,}0 & 60{,}6 \\
+\midrule
+Média & 0{,}909 & 0{,}901 & 0{,}909 & 63{,}4 & 59{,}6 & 53{,}8 \\
+Treino completo$^\dagger$ & 0{,}939 & 0{,}965 & 0{,}984 & 58{,}3 & 57{,}0 & 52{,}5 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+{\scriptsize $^\dagger$ modelo treinado com as 100 vistas do hemisfério, média de 6 cenas (as vistas de cima fazem parte do treino dele).}
+\end{table}

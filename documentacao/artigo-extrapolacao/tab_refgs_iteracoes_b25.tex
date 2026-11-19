@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\caption{Ref-Gaussian nas vistas de teste acima de 25° (PSNR em dB): treinado só na faixa, com 28 mil iterações, contra o modelo treinado com todas as alturas avaliado nos \textit{checkpoints} de 30, 40 e 50 mil iterações. A diferença entre as colunas do modelo completo mede o efeito das iterações; a diferença para a primeira coluna, o efeito das vistas de cima.}
+\label{tab:refgsiter25}
+\setlength{\tabcolsep}{4pt}
+\footnotesize
+\begin{tabular}{l c ccc}
+\toprule
+ & Faixa & \multicolumn{3}{c}{Todas as alturas} \\
+\cmidrule(lr){2-2}\cmidrule(lr){3-5}
+Cena & 28 mil & 30 mil & 40 mil & 50 mil \\
+\midrule
+\textit{ball} & -- & 35{,}46 & 35{,}66 & 35{,}92 \\
+\textit{car} & 22{,}90 & 31{,}60 & 31{,}91 & 32{,}07 \\
+\textit{coffee} & -- & 33{,}81 & 33{,}97 & 34{,}10 \\
+\textit{helmet} & 22{,}63 & 33{,}32 & 34{,}01 & 32{,}41 \\
+\textit{teapot} & -- & 48{,}42 & 48{,}47 & 48{,}56 \\
+\textit{toaster} & 17{,}30 & 28{,}25 & 28{,}68 & 28{,}05 \\
+\midrule
+Média (3 cenas) & 20{,}95 & 31{,}05 & 31{,}53 & 30{,}84 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\caption{Erro angular médio das normais (graus) contra a referência. No 3DGS, a normal é derivada da profundidade renderizada (prof.) ou é o eixo mais curto de cada Gaussiana, composto por alfa (eixo); no Ref-Gaussian, é a normal que o próprio modelo usa no sombreamento. Cada bloco usa só as cenas em que todos os seus modelos existem.}
+\label{tab:normais25}
+\setlength{\tabcolsep}{5pt}
+\footnotesize
+\begin{tabular}{l ccc}
+\toprule
+Modelo & Faixa & Acima & De cima \\
+\midrule
+\multicolumn{4}{l}{\textit{6 cenas}} \\
+3DGS, faixa 25° (prof.) & 63{,}4 & 59{,}6 & 53{,}8 \\
+3DGS, faixa 25° (eixo) & 54{,}5 & 48{,}0 & 40{,}8 \\
+3DGS, hemisfério todo$^\dagger$ (prof.) & 58{,}3 & 57{,}0 & 52{,}5 \\
+3DGS, hemisfério todo$^\dagger$ (eixo) & 54{,}9 & 49{,}9 & 43{,}4 \\
+Ref-Gaussian, hemisfério todo & 5{,}7 & 5{,}2 & n/a \\
+\midrule
+\multicolumn{4}{l}{\textit{3 cenas}} \\
+3DGS, faixa 25° (prof.) & 68{,}3 & 63{,}6 & 56{,}7 \\
+3DGS, faixa 25° (eixo) & 59{,}8 & 52{,}0 & 43{,}2 \\
+Ref-Gaussian, faixa 25° & 13{,}8 & 13{,}4 & 11{,}6 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+{\scriptsize $^\dagger$ as vistas de cima fazem parte do treino deste modelo.}
+\end{table}

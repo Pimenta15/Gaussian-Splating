@@ -222,3 +222,13 @@ ref-gaussian/
 
 # Windows
 desktop.ini
+
+# Experimento de extrapolação em elevação: saídas de treino, divisões geradas e arquivos de compilação
+experimentos/extrapolacao_sh/saidas/
+experimentos/extrapolacao_sh/dados_banda/
+documentacao/artigo-extrapolacao/*.aux
+documentacao/artigo-extrapolacao/*.log
+documentacao/artigo-extrapolacao/*.out
+documentacao/artigo-extrapolacao/*_backup.tex
+documentacao/artigo-extrapolacao/perguntas_provaveis.md
+experimentos/extrapolacao_sh/figs_slides/

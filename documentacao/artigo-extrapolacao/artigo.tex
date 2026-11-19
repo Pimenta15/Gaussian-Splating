@@ -1,0 +1,204 @@
+\documentclass[conference]{IEEEtran}
+% Extrapolação de vista em elevação no 3DGS: diagnóstico e correções leves, com foco automotivo.
+% Compilar com pdfLaTeX. Tabelas tab_*.tex e figuras em figs/ são geradas por
+% experimentos/extrapolacao_sh/tabelas.py a partir dos resultados por vista.
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{icomma}
+
+\newcommand{\pend}{\textcolor{red}{??}}
+
+\begin{document}
+
+\title{Reflexos Fora do Ângulo Filmado: 3DGS e Ref-Gaussian sob Cobertura Limitada de Elevação na Reconstrução de Veículos}
+
+\author{\IEEEauthorblockN{João Pedro Maciel Pimenta}
+\IEEEauthorblockA{\textit{Centro de Informática} \\
+\textit{Universidade Federal de Pernambuco}\\
+Recife, Brasil \\
+jpmp3@cin.ufpe.br}
+\and
+\IEEEauthorblockN{Francisco Paulo Magalhães Simões}
+\IEEEauthorblockA{\textit{Centro de Informática} \\
+\textit{Universidade Federal de Pernambuco}\\
+Recife, Brasil \\
+fpms@cin.ufpe.br}
+}
+
+\maketitle
+
+\input{resumo.tex}
+
+\begin{IEEEkeywords}
+Gaussian Splatting, síntese de novas vistas, extrapolação de vista, harmônicos esféricos, reconstrução automotiva, compressão de modelos 3D.
+\end{IEEEkeywords}
+
+% =====================================================================
+\section{Introdução}\label{sec:intro}
+
+O 3D Gaussian Splatting (3DGS)~\cite{kerbl2023} reconstrói uma cena a partir de fotos com poses conhecidas e a renderiza em tempo real, com qualidade comparável à dos campos de radiância neurais (NeRF)~\cite{mildenhall2022nerf} e custo muito menor~\cite{fei2024survey}. A cena é um conjunto de Gaussianas 3D, cada uma com posição, forma, opacidade e uma cor que depende da direção de visão, descrita por harmônicos esféricos (SH) de grau 3: 16 coeficientes por canal de cor.
+
+No domínio automotivo, essa representação aparece em dois usos. No primeiro, um veículo é fotografado ou filmado em volta para gerar uma visualização 3D destinada a anúncios ou inspeção. No segundo, gravações de direção são convertidas em cenas que um simulador renderiza a partir de trajetórias novas, para testar sistemas de percepção e condução~\cite{yang2023unisim,yan2024streetgs,zhou2024drivinggaussian,chen2025omnire}. Nos dois casos, as câmeras ocupam uma faixa estreita de alturas: na captura em volta do veículo, a câmera fica perto da altura dele; nas gravações de direção, as câmeras são fixas no carro~\cite{sun2020waymo}. O uso, porém, pede outros pontos de vista. O comprador gira o modelo para ver o teto, e o simulador precisa de mudanças de faixa ou de câmeras em outras alturas. Em cenas de direção, o \textit{benchmark} EUVS~\cite{han2025euvs} mostrou que o Gaussian Splatting perde muita qualidade em vistas extrapoladas e se ajusta demais às vistas de treino, e o FreeVS~\cite{wang2025freevs} relata o mesmo fora da trajetória gravada.
+
+Capturar mais alturas nem sempre é possível. Uma gravação de direção é feita uma vez, e o simulador precisa justamente das vistas que ela não tem. Em serviços de anúncios, a captura é feita por terceiros, e filmar o teto de um veículo exige equipamento adicional, como bastões ou drones. Além disso, qualquer captura finita deixa direções sem observação. As perguntas práticas são, portanto, o que falha fora da faixa filmada, quanto vale a cobertura que falta e o que se pode corrigir depois do treino, a que custo.
+
+Duas explicações concorrem. A geometria pode estar mal definida onde nenhuma câmera olhou. Ou a cor pode ser o problema, por dois motivos possíveis: um conjunto estreito de direções não determina os 16 coeficientes de SH (Seção~\ref{sec:metodo}), o que admitiria uma correção barata e sem treino; ou a aparência vista de cima simplesmente não está nas imagens, o que exigiria informação nova. Cada explicação leva a um remédio diferente. Este trabalho responde a quatro questões de pesquisa:
+\begin{itemize}
+\item \textbf{QP1.} Quanto se perde fora da faixa filmada, e como a perda depende da largura dessa faixa?
+\item \textbf{QP2.} O erro de cima é de cor, de geometria ou da interação entre as duas?
+\item \textbf{QP3.} Um modelo de reflexão baseado em física, o Ref-Gaussian~\cite{yao2025refgaussian}, extrapola melhor? Se não, que parte da sua aparência (material, iluminação do ambiente ou luz indireta) falha de cima?
+\item \textbf{QP4.} Quanto recuperam correções leves, aplicadas a um modelo já treinado, e a que custo de tempo e armazenamento?
+\end{itemize}
+
+O caso automotivo torna a QP3 central. Pintura, cromados e vidros são superfícies reflexivas, justamente onde o 3DGS embute o reflexo na cor dependente de vista, e onde modelos como o Ref-Gaussian, que calculam o reflexo a partir da normal da superfície, de propriedades de material e de um mapa de ambiente compartilhado, prometem generalizar melhor.
+
+Em dados reais essas questões não têm resposta, porque não existe imagem de referência do ângulo que faltou. Usamos então dados sintéticos como laboratório controlado: o Shiny Blender~\cite{verbin2022refnerf}, que inclui um carro entre seis objetos reflexivos, tem imagens de referência de todos os ângulos. Treinamos só com as vistas baixas e medimos o erro em função da elevação. As contribuições são:
+\begin{itemize}
+\item um protocolo controlado e reproduzível de extrapolação em elevação, com três grupos de avaliação, duas larguras de faixa e um modelo de referência treinado com cobertura completa;
+\item uma decomposição do erro entre cor e geometria, por oráculos que reajustam só uma das partes e por uma medida direta da geometria contra silhuetas e normais de referência;
+\item um diagnóstico do Ref-Gaussian sob cobertura limitada: geometria medida contra a referência, um teste de cobertura das direções refletidas e oráculos que reajustam separadamente material, mapa de ambiente e luz indireta, com controle do efeito do número de iterações;
+\item uma análise do condicionamento dos SH sob faixas estreitas e uma projeção sem treino, com garantia de alterar pouco as direções observadas;
+\item uma comparação de custo e qualidade entre correções leves existentes (truncamento e redução adaptativa de grau dos SH), a projeção e o ganho de capturar de cima;
+\item a aplicação a um veículo real e o código aberto, incluindo uma ferramenta que corrige um modelo \texttt{.ply} em menos de 1~s em CPU.
+\end{itemize}
+
+\input{fig_teaser.tex}
+
+% =====================================================================
+\section{Trabalhos Relacionados}\label{sec:relacionados}
+
+\textbf{Cor dependente de vista e reflexos.} Os SH vêm da computação gráfica, onde representam iluminação e transporte de luz de baixa frequência~\cite{ramamoorthi2001irradiance,sloan2002prt}. PlenOctrees~\cite{yu2021plenoctrees} e Plenoxels~\cite{fridovich2022plenoxels} os adotaram para guardar a cor de campos de radiância sem rede neural, e o 3DGS~\cite{kerbl2023} herdou essa escolha. Gaussianas esféricas anisotrópicas~\cite{yang2024spec} e modelos de reflexão física melhoram reflexos nítidos. Nos campos neurais, o Ref-NeRF~\cite{verbin2022refnerf} parametriza a cor pela direção refletida, o NeRO~\cite{liu2023nero} recupera geometria e BRDF de objetos reflexivos e o NeRF-Casting~\cite{verbin2024nerfcasting} traça raios refletidos na própria cena. No 3DGS, o GaussianShader~\cite{jiang2024gshader} aplica uma função de sombreamento com a normal dada pelo eixo mais curto de cada Gaussiana, o 3DGS-DR~\cite{ye2024gsdr} adia o cálculo do reflexo para o espaço da imagem e o Ref-Gaussian~\cite{yao2025refgaussian}, construído sobre Gaussianas 2D~\cite{huang2024gs2d}, combina renderização baseada em física com reflexos entre partes do objeto. Esses métodos são avaliados em vistas de teste próximas das de treino; nenhum deles mede o que acontece longe delas.
+
+\textbf{Poucas vistas e vistas extrapoladas.} Com poucas imagens, NeRF e 3DGS se ajustam demais às vistas de treino. RegNeRF~\cite{niemeyer2022regnerf} e FreeNeRF~\cite{yang2023freenerf} regularizam geometria e frequência durante o treino; FSGS~\cite{zhu2024fsgs} e DNGaussian~\cite{li2024dngaussian} usam profundidade monocular. Para vistas distantes, a linha atual usa modelos gerativos pré-treinados: ReconFusion~\cite{wu2024reconfusion} e CAT3D~\cite{gao2024cat3d} geram vistas novas por difusão, GaussianObject~\cite{yang2024gaussianobject} completa objetos a partir de quatro fotos, ViewExtrapolator~\cite{liu2024viewextrapolator} refina vistas extrapoladas com um modelo de vídeo e Difix3D+~\cite{wu2025difix3d} corrige artefatos com difusão de um passo. Esses métodos recuperam geometria e cor, mas exigem retreino, GPUs com muita memória ou modelos de bilhões de parâmetros, e podem inventar detalhes, o que é indesejável em inspeção.
+
+\textbf{Reconstrução para direção autônoma.} UniSim~\cite{yang2023unisim} reconstrói gravações de direção para simulação em malha fechada. Street Gaussians~\cite{yan2024streetgs}, DrivingGaussian~\cite{zhou2024drivinggaussian} e OmniRe~\cite{chen2025omnire} representam o fundo e os agentes dinâmicos com Gaussianas; o Street Gaussians modela a aparência dos veículos com SH que variam no tempo. Na mesma linha das representações dinâmicas gerais~\cite{wu2024gs4d}, todos herdam a cor por SH do 3DGS. EUVS~\cite{han2025euvs} e FreeVS~\cite{wang2025freevs} mostram que a qualidade cai fora da trajetória gravada, mas não separam as causas dessa queda.
+
+\textbf{Redução dos SH.} Trabalhos de compressão mostraram que muitos coeficientes de SH são dispensáveis: o LightGaussian~\cite{fan2024lightgaussian} reduz o grau por destilação e Papantonakis et al.~\cite{papantonakis2024reducing} escolhem o grau por Gaussiana. O objetivo deles é memória dentro da faixa observada; aqui eles servem como correções leves de referência fora dela.
+
+\textbf{Avaliação com cobertura realista.} Gao et al.~\cite{gao2022dycheck} mostraram, para cenas dinâmicas, que protocolos comuns dão ao modelo mais pontos de vista do que uma captura casual daria. Simuladores como o CARLA~\cite{dosovitskiy2017carla} fornecem cenas automotivas com referência exata de qualquer ponto de vista. Este trabalho segue essa linha num caso estático e controlado: a cobertura em elevação.
+
+\textbf{Posicionamento.} A Tabela~\ref{tab:relacionados} resume as diferenças. Os trabalhos acima propõem soluções e medem o resultado final. Este trabalho mede onde está o erro, separando cor de geometria, e compara correções de custos muito diferentes no mesmo protocolo, o que permite escolher entre elas conforme o cenário de uso.
+
+\input{tab_relacionados.tex}
+
+% =====================================================================
+\section{Método}\label{sec:metodo}
+
+\subsection{Cor por harmônicos esféricos}
+
+No 3DGS, a cor da Gaussiana $i$ vista na direção unitária $\mathbf{d}$ (da câmera para a Gaussiana) é, por canal,
+\begin{equation}
+c_i(\mathbf{d}) = \mathbf{y}(\mathbf{d})^\top \mathbf{a}_i + 0{,}5,
+\end{equation}
+em que $\mathbf{y}(\mathbf{d}) \in \mathbb{R}^{16}$ reúne os SH reais até o grau 3 e $\mathbf{a}_i$ são os coeficientes aprendidos. O primeiro termo, $y_0$, é constante: é a cor média (``DC''). Os outros 15 descrevem como a cor muda com a direção.
+
+\subsection{O que as câmeras de treino determinam}
+
+Seja $\{\mathbf{d}_{ij}\}$ o conjunto de direções em que a Gaussiana $i$ aparece nas câmeras de treino $j$, com pesos $w_{ij} \ge 0$ que medem quanto ela contribui para os pixels da vista $j$. A perda de treino só observa $c_i$ nessas direções. Definimos a matriz de Gram
+\begin{equation}
+G_i = \frac{\sum_j w_{ij}\, \mathbf{y}(\mathbf{d}_{ij})\, \mathbf{y}(\mathbf{d}_{ij})^\top}{\sum_j w_{ij}} \in \mathbb{R}^{16\times 16}.
+\end{equation}
+A variação quadrática média da cor nas direções observadas, quando os coeficientes mudam de $\mathbf{a}$ para $\mathbf{a}+\boldsymbol{\delta}$, é $\boldsymbol{\delta}^\top G_i \boldsymbol{\delta}$. Se $\mathbf{v}$ é um autovetor de $G_i$ com autovalor próximo de zero, somar $\alpha\mathbf{v}$ aos coeficientes não muda nenhuma vista de treino, mas pode mudar muito as vistas de fora. O treino não tem como fixar essas combinações; o valor delas resulta da inicialização, do ruído do otimizador e do ajuste a ruído das imagens.
+
+A Fig.~\ref{fig:espectro} mostra o espectro de $G$ para faixas de elevação com todos os azimutes, como numa volta completa. Na esfera inteira, os 16 autovalores são iguais. Na faixa de um veículo real filmado entre 0,4° e 3,8°, 9 dos 16 ficam abaixo de 1\% do maior e 4 abaixo de $10^{-4}$. Mesmo no hemisfério superior inteiro restam 3 direções mal determinadas. Isso explica o resultado da Tabela~\ref{tab:treino}: mais iterações ou outra estratégia de densificação~\cite{kheradmand2024mcmc} não acrescentam informação sobre direções que nenhuma imagem mostra.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/espectro_gram.pdf}
+\caption{Autovalores da matriz de Gram dos SH de grau 3 (normalizados pelo maior) para direções de uma volta completa em diferentes faixas de elevação. Autovalores pequenos correspondem a combinações de coeficientes que não alteram nenhuma vista filmada.}
+\label{fig:espectro}
+\end{figure}
+
+\subsection{Projeção no subespaço observado}
+
+Propomos substituir, depois do treino, os coeficientes de cada Gaussiana pelos de menor norma que reproduzem a mesma cor nas direções observadas:
+\begin{equation}
+\begin{split}
+\mathbf{a}_i' &= \arg\min_{\mathbf{a}}\; (\mathbf{a}-\mathbf{a}_i)^\top G_i (\mathbf{a}-\mathbf{a}_i) + \lambda\, \mathbf{a}^\top L\, \mathbf{a}\\
+&= (G_i + \lambda L)^{-1} G_i\, \mathbf{a}_i,
+\end{split}
+\label{eq:proj}
+\end{equation}
+com $L = \mathrm{diag}(0, 1, \dots, 1)$: a cor média nunca é penalizada. A solução se aplica aos três canais de cor e tem duas propriedades.
+
+\textit{(i) Altera pouco as direções observadas.} Com $\mathbf{e} = \mathbf{a}_i - \mathbf{a}_i'$, decompondo no problema generalizado de autovalores $L\mathbf{v}=\mu G_i \mathbf{v}$, cada componente é multiplicado por $\lambda\mu/(1+\lambda\mu)$ e, como $(1+x)^2 \ge 4x$,
+\begin{equation}
+\mathbf{e}^\top G_i\, \mathbf{e} \;\le\; \frac{\lambda}{4}\, \mathbf{a}_i^\top L\, \mathbf{a}_i .
+\end{equation}
+A mudança quadrática média da cor nas direções de treino é no máximo $\lambda/4$ vezes a energia dos termos não constantes. A garantia vale para as direções de treino, e não necessariamente para direções intermediárias entre elas.
+
+\textit{(ii) Remove o que não foi observado.} Quando $L$ comuta com $G_i$, cada componente na base de autovetores de $G_i$ é multiplicado por $\sigma/(\sigma+\lambda)$, o filtro de Tikhonov~\cite{tikhonov1963}: direções bem observadas ($\sigma \gg \lambda$) ficam intactas e as não observadas ($\sigma \ll \lambda$) são zeradas. Fora da faixa filmada, a cor tende ao valor mais simples compatível com o que foi visto. Uma Gaussiana que nunca apareceu em nenhuma câmera fica só com a cor média.
+
+\subsection{Duas formas de obter as direções observadas}
+
+\textbf{Global.} Uma única matriz para a cena inteira, com as direções de uma volta completa na faixa de elevação das câmeras (com 5° de margem). Custa uma multiplicação $16\times16$ por Gaussiana e dispensa GPU e imagens: basta saber a faixa de elevação. Ignora a paralaxe (a direção da câmera muda conforme a posição da Gaussiana) e a oclusão.
+
+\textbf{Por visibilidade.} Para cada Gaussiana, usamos as direções reais $\mathbf{d}_{ij} = (\boldsymbol{\mu}_i - \mathbf{o}_j)/\lVert\boldsymbol{\mu}_i - \mathbf{o}_j\rVert$ até cada câmera de treino $\mathbf{o}_j$, com peso $w_{ij} = \sum_{p} \alpha_i(p)\, T_i(p)$: a soma, nos pixels $p$ da vista $j$, da opacidade da Gaussiana vezes a transmitância acumulada até ela. Esse peso já conta oclusão e enquadramento, e sai do próprio rasterizador: renderizando com cor constante igual a 1 e retropropagando a soma da imagem, o gradiente em relação à cor de cada Gaussiana é exatamente $w_{ij}$. O custo é uma renderização com retropropagação por câmera de treino e um sistema $16\times16$ por Gaussiana, resolvidos em lote na GPU.
+
+\subsection{Correções leves de referência}\label{sec:leves}
+
+Comparamos a projeção com correções existentes que também atuam sobre os SH de um modelo já treinado, sem retreino:
+\begin{itemize}
+\item \textbf{Truncamento de grau} (grau 0, 1 ou 2): zera os SH acima do grau escolhido. É o que fazem visualizadores leves e formatos compactos, e o grau 0 elimina toda a dependência de vista.
+\item \textbf{Grau adaptativo por Gaussiana}, no espírito de Papantonakis et al.~\cite{papantonakis2024reducing}: para cada Gaussiana, escolhemos o menor grau $\ell$ tal que a cor nas direções observadas muda menos que $\tau$, isto é, $\sqrt{\tfrac{1}{3}\sum_c \boldsymbol{\delta}_{\ell,c}^\top G_i\, \boldsymbol{\delta}_{\ell,c}} \le \tau$, em que $\boldsymbol{\delta}_{\ell,c}$ são os coeficientes descartados no canal $c$. Usamos $\tau = 0{,}01$ (escala de cor de 0 a 1).
+\item \textbf{Projeção seguida do grau adaptativo}: a projeção zera o que nenhuma câmera viu, e o grau adaptativo descarta esses coeficientes do armazenamento.
+\end{itemize}
+O armazenamento por Gaussiana, em precisão simples, é $4\,(11 + 3K)$ bytes, com $K$ coeficientes de SH por canal: 204 bytes no grau 3 e 56 bytes no grau 0.
+
+% =====================================================================
+\section{Protocolo Experimental}\label{sec:exp}
+
+\textbf{Dados sintéticos.} O Shiny Blender~\cite{verbin2022refnerf} tem seis objetos com materiais reflexivos (\textit{ball}, \textit{car}, \textit{coffee}, \textit{helmet}, \textit{teapot} e \textit{toaster}), imagens de 800$\times$800 px, 100 vistas de treino espalhadas no hemisfério superior (de 7° a 89° de elevação; na \textit{ball}, na esfera inteira) e 200 vistas de teste numa espiral entre 7° e 47°. Treinamos só com as vistas de treino abaixo de 25° de elevação, \input{num_treino.tex}imitando uma captura feita em volta do objeto, numa altura só. As vistas de treino não usadas cobrem até 89°, quase a vista de topo. Separamos três grupos, todos inéditos para o modelo:
+\begin{itemize}
+\item \textbf{dentro da faixa}: vistas de teste abaixo de 25° (interpolação);
+\item \textbf{acima}: vistas de teste entre 25° e 47° (extrapolação moderada);
+\item \textbf{de cima}: vistas de treino não usadas, entre 50° e 89°.
+\end{itemize}
+A Fig.~\ref{fig:protocolo} mostra os grupos numa cena. As vistas de treino não usadas entre 25° e 50° ficam de fora, para que o grupo ``acima'' tenha só vistas de teste. Para medir o efeito da largura da faixa (QP1), repetimos o experimento com treino abaixo de 15°. Como referência de cobertura completa, treinamos o mesmo 3DGS com as 100 vistas de treino. A Tabela~\ref{tab:modelos} lista todos os modelos avaliados.
+
+\input{tab_modelos.tex}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figs/protocolo.pdf}
+\caption{Câmeras da cena \textit{car} por azimute e elevação: treino abaixo de 25°, vistas de teste na espiral e vistas de cima usadas só na avaliação.}
+\label{fig:protocolo}
+\end{figure}
+
+\textbf{Oráculos.} Para separar cor de geometria (QP2), reajustamos só uma parte do modelo treinado, com a mesma perda do treino (3000 passos de Adam), usando as vistas de \emph{avaliação} de um grupo. É um procedimento deliberadamente privilegiado: o resultado é o teto do que uma correção restrita àquela parte poderia atingir, e não um método. O oráculo de cor reajusta todos os SH com a geometria congelada; uma variante reajusta só a cor constante, zerando os termos direcionais; o oráculo de geometria reajusta posições, escalas, rotações e opacidades com os SH congelados, com as taxas de aprendizado do treino original. Para não medir memorização, o ajuste usa as vistas de índice par do grupo e a avaliação usa as de índice ímpar. Num controle mais rigoroso, o ajuste usa só as vistas de um lado do objeto (azimute negativo) e a avaliação, as do outro lado.
+
+\textbf{Geometria.} Medimos a geometria diretamente, sem passar pela cor, contra a silhueta e o mapa de normais de referência de cada vista (Seção~\ref{sec:geometria}).
+
+\textbf{Ref-Gaussian.} Para a QP4, treinamos o Ref-Gaussian~\cite{yao2025refgaussian} com o código oficial nas mesmas vistas de treino de três cenas (\textit{car}, \textit{helmet} e \textit{toaster}) e o avaliamos nas mesmas vistas. O cronograma do método foi escalado proporcionalmente para 28 mil iterações. Com 30 mil iterações, o início da luz indireta coincide com um reinício de opacidade, a malha usada no traçado de raios não é extraída e o treino falha; 28 mil evita a coincidência. Como referência, usamos também modelos do Ref-Gaussian treinados com o hemisfério todo e o cronograma original de 50 mil iterações.
+
+\textbf{Escolha dos parâmetros.} O 3DGS usa a configuração padrão do artigo original~\cite{kerbl2023}: 30 mil iterações e SH de grau 3. O Ref-Gaussian completo usa o cronograma oficial de 50 mil iterações, com o qual nossa replicação atinge 34,5~dB de PSNR médio nas seis cenas do Shiny Blender, contra 35,0~dB relatados pelos autores. O Ref-Gaussian da faixa usa 28 mil iterações, para que a comparação com o 3DGS, que usa 30 mil, não favoreça o método mais caro; todas as fases do cronograma foram escaladas na mesma proporção. Como o modelo completo tem mais iterações que o da faixa, avaliamos também seus \textit{checkpoints} de 30 e 40 mil iterações (Seção~\ref{sec:refgs}), para separar o efeito das iterações do efeito das vistas. Nas correções, $\lambda = 10^{-2}$ é o menor valor que atua sem custar qualidade na faixa (Tabela~\ref{tab:lambda}), e $\tau = 0{,}01$ corresponde a cerca de 2,5 níveis de cor em 8 bits.
+
+\textbf{Custo.} Medimos o tempo de cada correção na mesma GPU e o armazenamento resultante pela fórmula da Seção~\ref{sec:leves}. A projeção global também foi medida em CPU, aplicada diretamente a um arquivo \texttt{.ply}.
+
+\textbf{Implementação.} Usamos o 3DGS da biblioteca gsplat~1.5.3~\cite{ye2025gsplat} com os hiperparâmetros do artigo original: 30 mil iterações, densificação até a metade do treino, SH de grau 3 liberado gradualmente, 100 mil pontos iniciais aleatórios e fundo branco. Na gsplat~1.5.3 o reinício periódico de opacidade nunca é acionado, por um erro de precedência de operadores; nós o reimplementamos no laço de treino. Medimos PSNR, SSIM~\cite{wang2004ssim} e LPIPS-VGG~\cite{zhang2018lpips} na imagem inteira, com intervalos de confiança por \textit{bootstrap}~\cite{efron1993bootstrap}. Os experimentos rodam numa RTX~4050 de 6~GB.
+
+\textbf{Veículo real.} Usamos capturas de um pipeline de produção de anúncios 3D de veículos. O pipeline extrai quadros nítidos do vídeo, segmenta o veículo com Mask R-CNN~\cite{he2017maskrcnn} refinado pelo SAM~\cite{kirillov2023sam}, estima as poses com o COLMAP~\cite{schonberger2016colmap} usando só pontos do veículo e treina o 3DGS só no veículo, com fundo aleatório a cada passo. A Tabela~\ref{tab:treino} usa esse pipeline para dois carros. Num Porsche 911 filmado com câmeras entre 0,4° e 3,8°, comparamos o modelo antes e depois da projeção global.
+
+\input{tab_treino_carros.tex}
+
+% =====================================================================
+\input{resultados.tex}
+
+% =====================================================================
+\section*{Disponibilidade de código}
+O código dos experimentos, os resultados por vista em JSON (dos quais todas as tabelas são geradas) e a ferramenta \texttt{projetar\_ply.py}, que aplica a projeção global a qualquer modelo 3DGS no formato \texttt{.ply}, estão em \url{https://github.com/Pimenta15/Gaussian-Splating}, na pasta \texttt{experimentos/extrapolacao\_sh}. Uma demonstração interativa, na pasta \texttt{documentacao/demo} do mesmo repositório, permite percorrer a elevação em cada cena e comparar lado a lado a referência, o 3DGS e o Ref-Gaussian treinados na faixa e com cobertura completa, e as correções leves.
+
+\input{referencias.tex}
+
+\end{document}

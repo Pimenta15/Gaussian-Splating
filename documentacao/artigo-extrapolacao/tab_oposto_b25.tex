@@ -1,0 +1,22 @@
+\begin{table}[t]
+\centering
+\caption{Controle do oráculo de cor (PSNR em dB, treino abaixo de 25°): a cor é reajustada só nas vistas de um lado do objeto (azimute negativo) e avaliada nas do lado oposto, que nenhuma vista do ajuste mostrou. A geometria continua congelada.}
+\label{tab:oposto25}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l ccc ccc}
+\toprule
+ & \multicolumn{3}{c}{Acima} & \multicolumn{3}{c}{De cima} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Cena & 3DGS & oráculo & $\Delta$ & 3DGS & oráculo & $\Delta$ \\
+\midrule
+\textit{ball} & 16{,}01 & 17{,}10 & +1{,}09 & 15{,}44 & 15{,}81 & +0{,}38 \\
+\textit{car} & 19{,}84 & 21{,}31 & +1{,}47 & 19{,}56 & 22{,}90 & +3{,}34 \\
+\textit{coffee} & 23{,}05 & 25{,}06 & +2{,}01 & 19{,}49 & 22{,}80 & +3{,}32 \\
+\textit{helmet} & 22{,}00 & 22{,}63 & +0{,}63 & 21{,}37 & 22{,}50 & +1{,}13 \\
+\textit{teapot} & 36{,}64 & 37{,}54 & +0{,}89 & 35{,}37 & 39{,}00 & +3{,}63 \\
+\textit{toaster} & 13{,}79 & 14{,}40 & +0{,}61 & 15{,}04 & 17{,}08 & +2{,}04 \\
+\midrule
+Média & 21{,}89 & 23{,}01 & +1{,}12 & 21{,}04 & 23{,}35 & +2{,}31 \\
+\bottomrule
+\end{tabular}
+\end{table}

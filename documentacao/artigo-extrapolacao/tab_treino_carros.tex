@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\caption{Veículos reais do pipeline de anúncios: treinar mais ou trocar a estratégia de densificação quase não muda a qualidade nas vistas de validação (PSNR medido só nos pixels do carro). As variantes reutilizam os mesmos quadros, máscaras e poses do COLMAP.}
+\label{tab:treino}
+\setlength{\tabcolsep}{3pt}
+\footnotesize
+\begin{tabular}{l l c c c c c}
+\toprule
+Carro & Variante & PSNR & Pior & SSIM & LPIPS & Treino \\
+\midrule
+\multirow{3}{*}{Ford GT} & 30k it., 1280 px & 22,24 & 15,16 & 0,946 & 0,094 & 22 min \\
+ & 60k it., 1600 px & 22,23 & 15,13 & 0,948 & 0,097 & 85 min \\
+ & 60k + MCMC~\cite{kheradmand2024mcmc} & 22,32 & 15,06 & 0,950 & 0,097 & 129 min \\
+\midrule
+\multirow{3}{*}{Porsche 911} & 30k it., 1280 px & 26,11 & 20,93 & 0,960 & 0,078 & 23 min \\
+ & 60k it., 1600 px & 26,28 & 20,73 & 0,963 & 0,078 & 90 min \\
+ & 60k + MCMC~\cite{kheradmand2024mcmc} & 26,37 & 20,49 & 0,964 & 0,082 & 130 min \\
+\bottomrule
+\end{tabular}
+\end{table}

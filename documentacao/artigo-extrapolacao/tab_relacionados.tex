@@ -1,0 +1,28 @@
+\begin{table}[t]
+\centering
+\caption{Trabalhos que tratam vistas pouco ou nada observadas. ``Treino'': exige treinar ou retreinar a cena; ``Prior'': conhecimento externo usado; ``Geo./Cor'': o que a técnica corrige.}
+\label{tab:relacionados}
+\setlength{\tabcolsep}{3pt}
+\footnotesize
+\begin{tabular}{l c c c c}
+\toprule
+Trabalho & Treino & Prior & Geo. & Cor \\
+\midrule
+RegNeRF, FreeNeRF~\cite{niemeyer2022regnerf,yang2023freenerf} & sim & não & sim & parcial \\
+FSGS, DNGaussian~\cite{zhu2024fsgs,li2024dngaussian} & sim & profund. & sim & parcial \\
+ReconFusion, CAT3D~\cite{wu2024reconfusion,gao2024cat3d} & sim & difusão & sim & sim \\
+GaussianObject~\cite{yang2024gaussianobject} & sim & difusão & sim & sim \\
+ViewExtrapolator~\cite{liu2024viewextrapolator} & não$^\dagger$ & vídeo & sim & sim \\
+Difix3D+~\cite{wu2025difix3d} & opcional & difusão & sim & sim \\
+Ref-Gaussian, GShader~\cite{yao2025refgaussian,jiang2024gshader} & sim & física & sim & reflexo \\
+Cenas de direção~\cite{yan2024streetgs,zhou2024drivinggaussian,chen2025omnire} & sim & LiDAR & sim & não \\
+FreeVS~\cite{wang2025freevs} & sim & difusão & sim & sim \\
+Redução de SH~\cite{fan2024lightgaussian,papantonakis2024reducing} & sim & não & não & não \\
+\midrule
+\textbf{Este trabalho} & \textbf{não} & \textbf{não} & diagnóst. & parcial \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+{\scriptsize $^\dagger$ inferência com modelo de vídeo de bilhões de parâmetros a cada nova vista.}
+\end{table}

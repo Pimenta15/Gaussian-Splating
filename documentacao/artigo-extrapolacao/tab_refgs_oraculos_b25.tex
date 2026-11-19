@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\caption{Oráculos de cima, treino abaixo de 25° (PSNR em dB nas vistas de cima de índice ímpar; o ajuste usa as de índice par). No 3DGS, reajusta-se só a cor (SH) ou só a geometria. No Ref-Gaussian, a geometria fica congelada e reajusta-se só o material (cor base, cor difusa, força do reflexo, rugosidade, metalicidade), só o mapa de ambiente, só a luz indireta ou os três.}
+\label{tab:refgsoraculos25}
+\setlength{\tabcolsep}{2.5pt}
+\footnotesize
+\begin{tabular}{l ccc ccccc}
+\toprule
+ & \multicolumn{3}{c}{3DGS} & \multicolumn{5}{c}{Ref-Gaussian} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-9}
+Cena & orig. & cor & geom. & orig. & mat. & amb. & ind. & todas \\
+\midrule
+\textit{car} & 19{,}64 & 26{,}05 & 27{,}22 & 20{,}92 & 23{,}08 & 21{,}71 & 20{,}94 & 23{,}73 \\
+\textit{helmet} & 21{,}29 & 27{,}08 & 27{,}74 & 20{,}75 & 22{,}08 & 21{,}40 & 21{,}17 & 23{,}58 \\
+\textit{toaster} & 14{,}86 & 20{,}14 & 22{,}49 & 16{,}19 & 17{,}46 & 16{,}68 & 16{,}32 & 18{,}56 \\
+\midrule
+Média & 18{,}60 & 24{,}42 & 25{,}82 & 19{,}29 & 20{,}87 & 19{,}93 & 19{,}48 & 21{,}96 \\
+\bottomrule
+\end{tabular}
+\end{table}

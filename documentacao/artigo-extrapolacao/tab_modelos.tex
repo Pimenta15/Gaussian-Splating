@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\caption{Modelos avaliados. ``Faixa'': só as vistas de treino abaixo de 25° (de 26 a 37 por cena); ``completo'': as 100 vistas de treino, de todas as alturas. Tempo médio de treino por cena numa RTX 4050 de 6~GB. As correções leves são aplicadas ao 3DGS da faixa, sem retreino.}
+\label{tab:modelos}
+\setlength{\tabcolsep}{2.5pt}
+\footnotesize
+\begin{tabular}{l l c c r}
+\toprule
+Modelo & Implementação & Vistas & Iter. & Tempo \\
+\midrule
+3DGS, faixa & gsplat 1.5.3, SH grau 3 & faixa & 30 mil & 20 min \\
+3DGS, completo & gsplat 1.5.3, SH grau 3 & 100 & 30 mil & 20 min \\
+Ref-Gaussian, faixa & oficial, crono.\ escalado & faixa & 28 mil & 47 min \\
+Ref-Gaussian, completo & oficial, crono.\ original & 100 & 50 mil & 106 min$^\dagger$ \\
+Correções leves & sobre o 3DGS da faixa & -- & -- & $\le$1,3 s \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+{\scriptsize $^\dagger$ medido no \textit{toaster}, fora do contêiner usado nos demais treinos.}
+\end{table}

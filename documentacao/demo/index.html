@@ -1,0 +1,294 @@
+<meta charset="utf-8">
+<title>Extrapolação em Elevação</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: ferramenta de comparação. Régua de elevação no topo; abaixo, uma linha com os modelos (cada um com seus
+   parâmetros), uma linha com as correções aplicadas ao 3DGS, o gráfico por elevação e a ficha dos modelos. */
+:root {
+  --bg: #F3F5F7;
+  --surface: #FFFFFF;
+  --ink: #17202A;
+  --muted: #5B6875;
+  --line: #D5DCE3;
+  --accent: #1F6FB2;
+  --band: #E3EEF8;
+  --warn: #B4531A;
+  --good: #2E8B57;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --text: "Inter", "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161C; --surface: #19212A; --ink: #E6EBF0; --muted: #98A6B4; --line: #2C3743;
+    --accent: #6FAEE6; --band: #1C3045; --warn: #E48A52; --good: #5CC08A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161C; --surface: #19212A; --ink: #E6EBF0; --muted: #98A6B4; --line: #2C3743;
+  --accent: #6FAEE6; --band: #1C3045; --warn: #E48A52; --good: #5CC08A; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--text); font-size: 15px; line-height: 1.5;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 1.7rem; line-height: 1.15; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 1.05rem; margin: 0; }
+.sub { color: var(--muted); margin: 6px 0 0; max-width: 72ch; }
+.rotulo { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font: 500 0.88rem var(--text); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.chip:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { font: 500 0.88rem var(--text); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; max-width: 100%; }
+.regua { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 8px; }
+.regua-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.elev { font-family: var(--display); font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.elev small { font-family: var(--text); font-size: 0.85rem; font-weight: 500; color: var(--muted); margin-left: 8px; }
+.trilho { position: relative; height: 28px; }
+.trilho .faixa { position: absolute; left: 0; top: 9px; height: 10px; border-radius: 5px; background: var(--band); }
+.trilho .base { position: absolute; left: 0; right: 0; top: 13px; height: 2px; background: var(--line); }
+.trilho .marca { position: absolute; top: 8px; width: 2px; height: 12px; background: var(--muted); opacity: 0.6; }
+.trilho input { position: absolute; inset: 0; width: 100%; margin: 0; background: transparent; accent-color: var(--accent); cursor: pointer; }
+.escala { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.secao { display: flex; flex-direction: column; gap: 10px; }
+.secao-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.vista { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; margin: 0; }
+.vista img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #FFFFFF; }
+.vista figcaption { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 2px; }
+.vista .nome { font-weight: 600; font-size: 0.88rem; line-height: 1.3; }
+.vista .det { font-size: 0.75rem; color: var(--muted); line-height: 1.35; }
+.vista .num { display: flex; justify-content: space-between; gap: 6px; margin-top: 4px; font-family: var(--mono); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.vista .tag { font-family: var(--text); font-size: 0.7rem; color: var(--warn); }
+.pos { color: var(--good); }
+.neg { color: var(--warn); }
+.painel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.painel svg { width: 100%; height: auto; display: block; }
+.tabela { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.72rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nota { color: var(--muted); font-size: 0.85rem; max-width: 80ch; margin: 0; }
+.carregando { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Extrapolação em elevação: 3DGS e Ref-Gaussian</h1>
+    <p class="sub">Suba a câmera na régua. Os modelos "abaixo de 25°" só viram fotos na faixa azul; os de "todas as alturas" viram fotos até 89°. As correções da segunda linha são aplicadas, sem retreino, ao 3DGS treinado abaixo de 25°.</p>
+  </header>
+
+  <div class="secao">
+    <span class="rotulo" id="rot-cena">Cena do Shiny Blender</span>
+    <div class="chips" id="cenas" role="group" aria-labelledby="rot-cena"></div>
+  </div>
+
+  <section class="regua" aria-label="Elevação da câmera">
+    <div class="regua-topo">
+      <div class="elev" id="elev">--</div>
+      <span class="nota" id="faixa-txt"></span>
+    </div>
+    <div class="trilho">
+      <div class="base"></div>
+      <div class="faixa" style="width: calc(25 / 90 * 100%)"></div>
+      <div id="marcas"></div>
+      <input type="range" id="regua" min="0" max="0" step="1" value="0" aria-label="Vista por elevação">
+    </div>
+    <div class="escala"><span>0°</span><span>25°</span><span>45°</span><span>65°</span><span>90°</span></div>
+  </section>
+
+  <section class="secao" aria-labelledby="t-modelos">
+    <div class="secao-topo"><h2 id="t-modelos">Modelos</h2><span class="nota">PSNR em resolução cheia contra a referência</span></div>
+    <div class="grade" id="modelos"><p class="carregando">Carregando a cena…</p></div>
+  </section>
+
+  <section class="secao" aria-labelledby="t-corr">
+    <div class="secao-topo"><h2 id="t-corr">Correções sem retreino, aplicadas ao 3DGS treinado abaixo de 25°</h2><span class="nota">variação de PSNR contra esse 3DGS; tamanho do modelo</span></div>
+    <div class="grade" id="correcoes"></div>
+  </section>
+
+  <section class="painel">
+    <div class="secao-topo">
+      <h2 id="graf-tit">PSNR por elevação nesta cena</h2>
+      <label class="nota">correção no gráfico
+        <select id="corr-graf">
+          <option value="global">Projeção global</option>
+          <option value="global_adapt">Global + grau adaptativo</option>
+          <option value="visib">Projeção por visibilidade</option>
+          <option value="visib_adapt">Visib. + grau adaptativo</option>
+          <option value="grau1">Truncamento, grau 1</option>
+          <option value="grau0">Truncamento, grau 0</option>
+        </select>
+      </label>
+    </div>
+    <svg id="grafico" viewBox="0 0 680 250" role="img" aria-labelledby="graf-tit"></svg>
+    <p class="nota">Pontos vazados: vistas que fizeram parte do treino dos modelos de todas as alturas (o PSNR deles ali mede ajuste, não extrapolação).</p>
+  </section>
+
+  <section class="painel" aria-labelledby="t-ficha">
+    <h2 id="t-ficha">Modelos e parâmetros</h2>
+    <div class="tabela"><table>
+      <thead><tr><th>Modelo</th><th>Implementação</th><th>Fotos de treino</th><th>Iterações</th><th>Treino (média por cena)</th></tr></thead>
+      <tbody id="ficha"></tbody>
+    </table></div>
+    <p class="nota">Correções: projeção dos harmônicos esféricos no subespaço observado com λ = 0,01 (global: uma matriz para a cena, roda em CPU; por visibilidade: uma matriz por Gaussiana); grau adaptativo com tolerância τ = 0,01; truncamento zera os graus acima do indicado. Tempos medidos numa RTX 4050 de 6 GB. Imagens reduzidas para 400 px.</p>
+  </section>
+</div>
+
+<script>
+const CENAS = ["car", "toaster", "helmet", "coffee", "teapot", "ball"];
+const CORRECOES = [
+  ["grau0", "Truncamento, grau 0", "sem reflexo; só a cor média"],
+  ["grau1", "Truncamento, grau 1", "4 coeficientes por canal"],
+  ["global", "Projeção global", "matriz única; roda em CPU"],
+  ["global_adapt", "Global + grau adaptativo", "projeção global e corte de graus"],
+  ["visib", "Projeção por visibilidade", "matriz por Gaussiana; GPU"],
+  ["visib_adapt", "Visib. + grau adaptativo", "projeção por visibilidade e corte"],
+];
+const NOME_CURTO = Object.fromEntries(CORRECOES.map(c => [c[0], c[1]]));
+const estado = { cena: "car", i: 0, corrGraf: "global", dados: {} };
+const $ = (id) => document.getElementById(id);
+
+function criarChips() {
+  $("cenas").innerHTML = "";
+  for (const c of CENAS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = c; b.id = "cena-" + c;
+    b.setAttribute("aria-pressed", String(c === estado.cena));
+    b.addEventListener("click", () => trocarCena(c));
+    $("cenas").appendChild(b);
+  }
+}
+
+async function carregar(c) {
+  if (estado.dados[c]) return estado.dados[c];
+  const r = await fetch("cenas/" + c + ".json");
+  if (!r.ok) throw new Error("não encontrei os dados da cena " + c);
+  estado.dados[c] = await r.json();
+  return estado.dados[c];
+}
+
+async function trocarCena(c) {
+  estado.cena = c;
+  for (const b of document.querySelectorAll(".chip")) b.setAttribute("aria-pressed", String(b.textContent === c));
+  $("modelos").innerHTML = '<p class="carregando">Carregando a cena…</p>';
+  $("correcoes").innerHTML = "";
+  try {
+    const d = await carregar(c);
+    $("regua").max = String(d.vistas.length - 1);
+    estado.i = d.vistas.length - 1;
+    $("regua").value = String(estado.i);
+    $("marcas").innerHTML = d.vistas.map(v => `<div class="marca" style="left: calc(${v.elev} / 90 * 100%)"></div>`).join("");
+    ficha(d);
+    desenhar();
+  } catch (e) {
+    $("modelos").innerHTML = `<p class="carregando">${e.message}. Abra a página por um servidor (por exemplo, python -m http.server) para que ela leia a pasta cenas.</p>`;
+  }
+}
+
+function fmt(x, casas = 2) { return x.toFixed(casas).replace(".", ","); }
+
+function cartao({ titulo, det, src, psnr, extra = "", tag = "" }) {
+  const img = src ? `<img src="${src}" alt="${titulo}, ${det}" loading="lazy">` : `<img alt="sem imagem para esta vista">`;
+  const num = psnr == null ? "" : `<div class="num"><span>${fmt(psnr)} dB</span>${extra}</div>`;
+  return `<figure class="vista">${img}<figcaption><span class="nome">${titulo}</span><span class="det">${det}</span>${num}${tag ? `<span class="tag">${tag}</span>` : ""}</figcaption></figure>`;
+}
+
+function desenhar() {
+  const d = estado.dados[estado.cena];
+  if (!d) return;
+  const v = d.vistas[estado.i];
+  $("elev").innerHTML = `${fmt(v.elev, 1)}°<small>azimute ${v.azim.toFixed(0)}°</small>`;
+  $("faixa-txt").textContent = v.elev < 25 ? "Dentro da faixa filmada pelos modelos abaixo de 25°"
+    : (v.elev < 50 ? "Acima da faixa filmada" : "De cima: nenhuma foto de treino abaixo de 25° chega perto");
+  const treinoTag = v.treino_completos ? "vista de treino deste modelo" : "";
+  const n = d.n_treino;
+  $("modelos").innerHTML = [
+    cartao({ titulo: "Referência", det: "foto real do conjunto", src: v.img.gt }),
+    cartao({ titulo: "3DGS, abaixo de 25°", det: `gsplat · 30 mil it. · ${n} fotos`, src: v.img.original, psnr: v.psnr.original }),
+    cartao({ titulo: "Ref-Gaussian, abaixo de 25°", det: `código oficial · 28 mil it. · ${n} fotos`, src: v.img.refgs, psnr: v.psnr.refgs ?? null }),
+    cartao({ titulo: "3DGS, todas as alturas", det: "gsplat · 30 mil it. · 100 fotos", src: v.img.completo, psnr: v.psnr.completo ?? null, tag: treinoTag }),
+    cartao({ titulo: "Ref-Gaussian, todas as alturas", det: "código oficial · 50 mil it. · 100 fotos", src: v.img.refgs_completo, psnr: v.psnr.refgs_completo ?? null, tag: treinoTag }),
+  ].join("");
+  $("correcoes").innerHTML = CORRECOES.map(([k, nome, det]) => {
+    const dlt = v.psnr[k] - v.psnr.original;
+    const cls = dlt >= 0 ? "pos" : "neg";
+    const extra = `<span class="${cls}">${dlt >= 0 ? "+" : "−"}${fmt(Math.abs(dlt))}</span><span>${fmt(d.mb[k], 0)} MB</span>`;
+    return cartao({ titulo: nome, det, src: v.img[k], psnr: v.psnr[k], extra });
+  }).join("");
+  grafico(d);
+}
+
+function grafico(d) {
+  const W = 680, H = 250, x0 = 44, x1 = 660, y0 = 14, y1 = 200;
+  const corr = estado.corrGraf;
+  const series = [
+    { k: "original", nome: "3DGS < 25°", cor: "var(--warn)", tr: "" },
+    { k: "refgs", nome: "Ref-Gaussian < 25°", cor: "var(--good)", tr: "" },
+    { k: corr, nome: NOME_CURTO[corr], cor: "var(--accent)", tr: "5 3" },
+    { k: "completo", nome: "3DGS, todas", cor: "var(--muted)", tr: "2 3" },
+    { k: "refgs_completo", nome: "Ref-G., todas", cor: "var(--good)", tr: "2 3" },
+  ].filter(s => d.vistas.every(v => typeof v.psnr[s.k] === "number"));
+  const vals = d.vistas.flatMap(v => series.map(s => v.psnr[s.k]));
+  const lo = Math.floor(Math.min(...vals) - 1), hi = Math.ceil(Math.max(...vals) + 1);
+  const X = e => x0 + (e / 90) * (x1 - x0);
+  const Y = p => y1 - ((p - lo) / (hi - lo)) * (y1 - y0);
+  const passo = (hi - lo) > 16 ? 5 : ((hi - lo) > 8 ? 2 : 1);
+  let g = `<rect x="${X(0)}" y="${y0}" width="${X(25) - X(0)}" height="${y1 - y0}" fill="var(--band)"/>
+    <text x="${X(12.5)}" y="${y1 - 8}" text-anchor="middle" font-size="11" fill="var(--accent)">faixa filmada</text>`;
+  for (let p = Math.ceil(lo / passo) * passo; p <= hi; p += passo) {
+    g += `<line x1="${x0}" x2="${x1}" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--line)"/>
+      <text x="${x0 - 8}" y="${Y(p) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${p}</text>`;
+  }
+  for (const e of [0, 25, 45, 65, 90]) g += `<text x="${X(e)}" y="${y1 + 16}" text-anchor="middle" font-size="11" fill="var(--muted)">${e}°</text>`;
+  const v = d.vistas[estado.i];
+  g += `<line x1="${X(v.elev)}" x2="${X(v.elev)}" y1="${y0}" y2="${y1}" stroke="var(--muted)" stroke-dasharray="4 4"/>`;
+  for (const s of series) {
+    const path = d.vistas.map((w, j) => `${j ? "L" : "M"}${X(w.elev).toFixed(1)},${Y(w.psnr[s.k]).toFixed(1)}`).join("");
+    g += `<path d="${path}" fill="none" stroke="${s.cor}" stroke-width="2" ${s.tr ? `stroke-dasharray="${s.tr}"` : ""}/>`;
+    const completo = s.k === "completo" || s.k === "refgs_completo";
+    g += d.vistas.map((w, j) => {
+      const vazio = completo && w.treino_completos;
+      return `<circle cx="${X(w.elev)}" cy="${Y(w.psnr[s.k])}" r="${j === estado.i ? 4.5 : 2.8}" fill="${vazio ? "var(--surface)" : s.cor}" stroke="${s.cor}" stroke-width="1.4" data-j="${j}" style="cursor:pointer"><title>${s.nome}, ${fmt(w.elev, 1)}°: ${fmt(w.psnr[s.k])} dB</title></circle>`;
+    }).join("");
+  }
+  let lx = x0;
+  g += `<g font-size="11">` + series.map(s => {
+    const item = `<line x1="${lx}" x2="${lx + 20}" y1="${H - 12}" y2="${H - 12}" stroke="${s.cor}" stroke-width="2" ${s.tr ? `stroke-dasharray="${s.tr}"` : ""}/><text x="${lx + 25}" y="${H - 8}" fill="var(--ink)">${s.nome}</text>`;
+    lx += 32 + s.nome.length * 6.2;
+    return item;
+  }).join("") + `</g>`;
+  $("grafico").innerHTML = g;
+  for (const c of $("grafico").querySelectorAll("circle[data-j]")) {
+    c.addEventListener("click", () => { estado.i = Number(c.dataset.j); $("regua").value = String(estado.i); desenhar(); });
+  }
+}
+
+function ficha(d) {
+  const n = d.n_treino;
+  const linhas = [
+    ["3DGS, abaixo de 25°", "gsplat 1.5.3; SH de grau 3; configuração padrão do 3DGS", `${n} fotos, todas abaixo de 25°`, "30 mil", "20 min"],
+    ["3DGS, todas as alturas", "mesma configuração", "100 fotos, de todas as alturas", "30 mil", "20 min"],
+    ["Ref-Gaussian, abaixo de 25°", "código oficial (Yao et al., ICLR 2025); cronograma escalado para empatar com o 3DGS", `${n} fotos, todas abaixo de 25°`, "28 mil", "47 min"],
+    ["Ref-Gaussian, todas as alturas", "código oficial; cronograma original do artigo", "100 fotos, de todas as alturas", "50 mil", "1 h 46 min"],
+    ["Correções", "aplicadas ao 3DGS abaixo de 25°, sem retreino", "não usam fotos novas", "—", "até 1,3 s"],
+  ];
+  $("ficha").innerHTML = linhas.map(l => `<tr><td>${l[0]}</td><td>${l[1]}</td><td>${l[2]}</td><td class="n">${l[3]}</td><td class="n">${l[4]}</td></tr>`).join("")
+    + `<tr><td>Cena ${d.cena}</td><td>${d.n_gaussianas.toLocaleString("pt-BR")} Gaussianas no 3DGS abaixo de 25°</td><td>${fmt(d.mb.original, 1)} MB em precisão simples</td><td class="n"></td><td class="n"></td></tr>`;
+}
+
+$("regua").addEventListener("input", e => { estado.i = Number(e.target.value); desenhar(); });
+$("corr-graf").addEventListener("change", e => { estado.corrGraf = e.target.value; desenhar(); });
+criarChips();
+trocarCena("car");
+</script>

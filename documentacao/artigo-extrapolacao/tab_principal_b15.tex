@@ -1,0 +1,19 @@
+\begin{table*}[t]
+\centering
+\caption{Média nas 6 cenas do Shiny Blender, treino só com vistas abaixo de 15°. Faixa e acima: vistas de teste; de cima: vistas de treino não usadas, entre 50° e 89°. As correções são aplicadas ao mesmo modelo treinado, sem novo treino. Em negrito, o melhor entre as variantes desse modelo.}
+\label{tab:principal15}
+\begin{tabular}{l ccc ccc ccc}
+\toprule
+ & \multicolumn{3}{c}{Dentro da faixa ($<15$°)} & \multicolumn{3}{c}{Acima (15°--47°)} & \multicolumn{3}{c}{De cima (50°--89°)} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+Variante & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ & PSNR$\uparrow$ & SSIM$\uparrow$ & LPIPS$\downarrow$ \\
+\midrule
+3DGS (original) & \textbf{22{,}69} & 0{,}874 & 0{,}197 & 18{,}97 & 0{,}781 & 0{,}301 & 17{,}39 & 0{,}737 & 0{,}342 \\
+Só termo constante (DC) & 22{,}13 & 0{,}870 & 0{,}211 & 19{,}01 & \textbf{0{,}787} & 0{,}299 & \textbf{17{,}44} & \textbf{0{,}743} & \textbf{0{,}334} \\
+Projeção global & 22{,}68 & \textbf{0{,}874} & 0{,}197 & \textbf{19{,}04} & 0{,}785 & 0{,}296 & 17{,}38 & 0{,}740 & 0{,}336 \\
+Projeção por visibilidade & 22{,}45 & 0{,}874 & \textbf{0{,}195} & 18{,}95 & 0{,}787 & \textbf{0{,}292} & 17{,}27 & 0{,}740 & 0{,}334 \\
+\midrule
+\textit{Referência: treino com o hemisfério todo} & 28{,}25 & 0{,}940 & 0{,}116 & 29{,}14 & 0{,}935 & 0{,}122 & n/a & n/a & n/a \\
+\bottomrule
+\end{tabular}
+\end{table*}
