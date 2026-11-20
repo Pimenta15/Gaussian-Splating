@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\caption{PSNR (dB) com treino só abaixo de 25° (``faixa'') ou com todas as alturas sem as fotos avaliadas (``todas''). As mesmas fotos ficam fora do treino dos quatro modelos: de cima, as vistas separadas acima de 50°; acima, as vistas de teste de 25° a 47°.}
+\label{tab:holdout25}
+\setlength{\tabcolsep}{3pt}
+\footnotesize
+\begin{tabular}{l cccc cccc}
+\toprule
+ & \multicolumn{4}{c}{De cima} & \multicolumn{4}{c}{Acima} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+ & \multicolumn{2}{c}{3DGS} & \multicolumn{2}{c}{Ref-G.} & \multicolumn{2}{c}{3DGS} & \multicolumn{2}{c}{Ref-G.} \\
+Cena & faixa & todas & faixa & todas & faixa & todas & faixa & todas \\
+\midrule
+\textit{ball} & 14{,}50 & 18{,}75 & 15{,}43 & -- & 15{,}62 & 21{,}01 & 17{,}34 & -- \\
+\textit{car} & 19{,}85 & 26{,}49 & 21{,}08 & 31{,}62 & 21{,}66 & 26{,}51 & 22{,}90 & 30{,}92 \\
+\textit{coffee} & 19{,}61 & 28{,}56 & 19{,}38 & -- & 24{,}31 & 31{,}01 & 23{,}76 & -- \\
+\textit{helmet} & 21{,}05 & 24{,}67 & 20{,}39 & 32{,}61 & 22{,}33 & 27{,}13 & 22{,}63 & 32{,}63 \\
+\textit{teapot} & 35{,}69 & 47{,}90 & 34{,}68 & -- & 38{,}19 & 43{,}86 & 38{,}19 & -- \\
+\textit{toaster} & 14{,}74 & 22{,}00 & 16{,}19 & 27{,}65 & 13{,}92 & 20{,}03 & 17{,}30 & 27{,}13 \\
+\midrule
+Média (6) & 20{,}91 & 28{,}06 & 21{,}19 & -- & 22{,}67 & 28{,}26 & 23{,}69 & -- \\
+Média (3) & 18{,}55 & 24{,}38 & 19{,}22 & 30{,}63 & 19{,}30 & 24{,}56 & 20{,}95 & 30{,}22 \\
+\bottomrule
+\end{tabular}
+\end{table}

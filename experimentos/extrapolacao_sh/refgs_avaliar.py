@@ -21,7 +21,10 @@ def main():
     linhas = []
     for idx, fr in enumerate(meta["frames"]):
         gt = cv2.imread(str(dados / (fr["file_path"] + ".png")), cv2.IMREAD_UNCHANGED).astype(np.float32) / 255
-        gt = gt[..., :3] * gt[..., 3:4] + (1 - gt[..., 3:4])  # sobre fundo branco, como no treino
+        if gt.ndim == 3 and gt.shape[2] == 4:
+            gt = gt[..., :3] * gt[..., 3:4] + (1 - gt[..., 3:4])  # sobre fundo branco, como no treino
+        else:  # ball: a imagem já vem em RGB sobre fundo branco
+            gt = gt[..., :3]
         gt = gt[..., ::-1].copy()
         pr = cv2.imread(str(modelo / "test" / "renders" / "rgb" / f"{idx:05d}.png"))[..., ::-1].astype(np.float32) / 255
         a = torch.from_numpy(pr.copy()).cuda().permute(2, 0, 1)[None]

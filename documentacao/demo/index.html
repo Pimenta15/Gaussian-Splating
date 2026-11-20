@@ -68,6 +68,7 @@ select { font: 500 0.88rem var(--text); color: var(--ink); background: var(--sur
 .vista .det { font-size: 0.75rem; color: var(--muted); line-height: 1.35; }
 .vista .num { display: flex; justify-content: space-between; gap: 6px; margin-top: 4px; font-family: var(--mono); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 .vista .tag { font-family: var(--text); font-size: 0.7rem; color: var(--warn); }
+.vista .vazio { aspect-ratio: 1; display: grid; place-items: center; padding: 16px; text-align: center; color: var(--muted); font-size: 0.85rem; background: var(--bg); }
 .pos { color: var(--good); }
 .neg { color: var(--warn); }
 .painel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -211,14 +212,25 @@ function desenhar() {
   $("elev").innerHTML = `${fmt(v.elev, 1)}°<small>azimute ${v.azim.toFixed(0)}°</small>`;
   $("faixa-txt").textContent = v.elev < 25 ? "Dentro da faixa filmada pelos modelos abaixo de 25°"
     : (v.elev < 50 ? "Acima da faixa filmada" : "De cima: nenhuma foto de treino abaixo de 25° chega perto");
-  const treinoTag = v.treino_completos ? "vista de treino deste modelo" : "";
+  const treinoTag = v.treino_completos ? "esta foto foi usada no treino deste modelo: o PSNR mede ajuste, não extrapolação" : "";
   const n = d.n_treino;
+  const h = d.holdout;
+  // "todas as alturas": usa o modelo treinado sem as fotos avaliadas quando existe; senão, o completo com aviso
+  const g3 = v.img.holdout
+    ? cartao({ titulo: "3DGS, todas as alturas", det: `gsplat · 30 mil it. · ${h.n_treino} fotos até ${h.elev_max}°, sem as avaliadas`, src: v.img.holdout, psnr: v.psnr.holdout ?? null })
+    : cartao({ titulo: "3DGS, todas as alturas", det: "gsplat · 30 mil it. · 100 fotos", src: v.img.completo, psnr: v.psnr.completo ?? null, tag: treinoTag });
+  // Ref-Gaussian, todas as alturas: a versão sem as fotos avaliadas quando existe; senão o completo (50 mil it.)
+  // só nas vistas que ele não usou no treino; nas outras, um aviso no lugar do número
+  const gr = v.img.refgs_holdout
+    ? cartao({ titulo: "Ref-Gaussian, todas as alturas", det: `código oficial · 28 mil it. · ${h ? h.n_treino : ""} fotos, sem as avaliadas`, src: v.img.refgs_holdout, psnr: v.psnr.refgs_holdout ?? null })
+    : (!v.treino_completos
+      ? cartao({ titulo: "Ref-Gaussian, todas as alturas", det: "código oficial · 50 mil it. · 100 fotos", src: v.img.refgs_completo, psnr: v.psnr.refgs_completo ?? null })
+      : `<figure class="vista pendente"><div class="vazio">Sem resultado comparável nesta vista</div><figcaption><span class="nome">Ref-Gaussian, todas as alturas</span><span class="det">O modelo disponível nesta cena usou esta foto no treino. A versão sem as fotos avaliadas ${["car", "helmet", "toaster"].includes(d.cena) ? "está sendo treinada" : "foi treinada só em car, helmet e toaster"}.</span></figcaption></figure>`);
   $("modelos").innerHTML = [
     cartao({ titulo: "Referência", det: "foto real do conjunto", src: v.img.gt }),
     cartao({ titulo: "3DGS, abaixo de 25°", det: `gsplat · 30 mil it. · ${n} fotos`, src: v.img.original, psnr: v.psnr.original }),
     cartao({ titulo: "Ref-Gaussian, abaixo de 25°", det: `código oficial · 28 mil it. · ${n} fotos`, src: v.img.refgs, psnr: v.psnr.refgs ?? null }),
-    cartao({ titulo: "3DGS, todas as alturas", det: "gsplat · 30 mil it. · 100 fotos", src: v.img.completo, psnr: v.psnr.completo ?? null, tag: treinoTag }),
-    cartao({ titulo: "Ref-Gaussian, todas as alturas", det: "código oficial · 50 mil it. · 100 fotos", src: v.img.refgs_completo, psnr: v.psnr.refgs_completo ?? null, tag: treinoTag }),
+    g3, gr,
   ].join("");
   $("correcoes").innerHTML = CORRECOES.map(([k, nome, det]) => {
     const dlt = v.psnr[k] - v.psnr.original;
@@ -236,9 +248,13 @@ function grafico(d) {
     { k: "original", nome: "3DGS < 25°", cor: "var(--warn)", tr: "" },
     { k: "refgs", nome: "Ref-Gaussian < 25°", cor: "var(--good)", tr: "" },
     { k: corr, nome: NOME_CURTO[corr], cor: "var(--accent)", tr: "5 3" },
+    { k: "holdout", nome: "3DGS, todas", cor: "var(--muted)", tr: "2 3" },
     { k: "completo", nome: "3DGS, todas", cor: "var(--muted)", tr: "2 3" },
+    { k: "refgs_holdout", nome: "Ref-G., todas", cor: "var(--good)", tr: "2 3" },
     { k: "refgs_completo", nome: "Ref-G., todas", cor: "var(--good)", tr: "2 3" },
-  ].filter(s => d.vistas.every(v => typeof v.psnr[s.k] === "number"));
+  ].filter(s => d.vistas.every(v => typeof v.psnr[s.k] === "number"))
+   .filter((s, _, todas) => !(s.k === "completo" && todas.some(t => t.k === "holdout"))
+                         && !(s.k === "refgs_completo" && todas.some(t => t.k === "refgs_holdout")));
   const vals = d.vistas.flatMap(v => series.map(s => v.psnr[s.k]));
   const lo = Math.floor(Math.min(...vals) - 1), hi = Math.ceil(Math.max(...vals) + 1);
   const X = e => x0 + (e / 90) * (x1 - x0);
@@ -256,7 +272,7 @@ function grafico(d) {
   for (const s of series) {
     const path = d.vistas.map((w, j) => `${j ? "L" : "M"}${X(w.elev).toFixed(1)},${Y(w.psnr[s.k]).toFixed(1)}`).join("");
     g += `<path d="${path}" fill="none" stroke="${s.cor}" stroke-width="2" ${s.tr ? `stroke-dasharray="${s.tr}"` : ""}/>`;
-    const completo = s.k === "completo" || s.k === "refgs_completo";
+    const completo = s.k === "completo" || s.k === "refgs_completo";  // os sem as fotos avaliadas não têm vista de treino aqui
     g += d.vistas.map((w, j) => {
       const vazio = completo && w.treino_completos;
       return `<circle cx="${X(w.elev)}" cy="${Y(w.psnr[s.k])}" r="${j === estado.i ? 4.5 : 2.8}" fill="${vazio ? "var(--surface)" : s.cor}" stroke="${s.cor}" stroke-width="1.4" data-j="${j}" style="cursor:pointer"><title>${s.nome}, ${fmt(w.elev, 1)}°: ${fmt(w.psnr[s.k])} dB</title></circle>`;
@@ -278,9 +294,11 @@ function ficha(d) {
   const n = d.n_treino;
   const linhas = [
     ["3DGS, abaixo de 25°", "gsplat 1.5.3; SH de grau 3; configuração padrão do 3DGS", `${n} fotos, todas abaixo de 25°`, "30 mil", "20 min"],
-    ["3DGS, todas as alturas", "mesma configuração", "100 fotos, de todas as alturas", "30 mil", "20 min"],
+    ["3DGS, todas as alturas", "mesma configuração", d.holdout ? `${d.holdout.n_treino} fotos até ${d.holdout.elev_max}°; as fotos avaliadas ficam de fora` : "100 fotos, de todas as alturas", "30 mil", "20 min"],
     ["Ref-Gaussian, abaixo de 25°", "código oficial (Yao et al., ICLR 2025); cronograma escalado para empatar com o 3DGS", `${n} fotos, todas abaixo de 25°`, "28 mil", "47 min"],
-    ["Ref-Gaussian, todas as alturas", "código oficial; cronograma original do artigo", "100 fotos, de todas as alturas", "50 mil", "1 h 46 min"],
+    d.vistas.some(v => v.img.refgs_holdout)
+      ? ["Ref-Gaussian, todas as alturas", "código oficial; mesmo cronograma do modelo abaixo de 25°", `${d.holdout.n_treino} fotos até ${d.holdout.elev_max}°; as fotos avaliadas ficam de fora`, "28 mil", "~50 min"]
+      : ["Ref-Gaussian, todas as alturas", "código oficial; cronograma original do artigo", "100 fotos, de todas as alturas", "50 mil", "1 h 46 min"],
     ["Correções", "aplicadas ao 3DGS abaixo de 25°, sem retreino", "não usam fotos novas", "—", "até 1,3 s"],
   ];
   $("ficha").innerHTML = linhas.map(l => `<tr><td>${l[0]}</td><td>${l[1]}</td><td>${l[2]}</td><td class="n">${l[3]}</td><td class="n">${l[4]}</td></tr>`).join("")

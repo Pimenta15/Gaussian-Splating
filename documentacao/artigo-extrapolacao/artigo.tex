@@ -165,7 +165,7 @@ O armazenamento por Gaussiana, em precisão simples, é $4\,(11 + 3K)$ bytes, co
 \item \textbf{acima}: vistas de teste entre 25° e 47° (extrapolação moderada);
 \item \textbf{de cima}: vistas de treino não usadas, entre 50° e 89°.
 \end{itemize}
-A Fig.~\ref{fig:protocolo} mostra os grupos numa cena. As vistas de treino não usadas entre 25° e 50° ficam de fora, para que o grupo ``acima'' tenha só vistas de teste. Para medir o efeito da largura da faixa (QP1), repetimos o experimento com treino abaixo de 15°. Como referência de cobertura completa, treinamos o mesmo 3DGS com as 100 vistas de treino. A Tabela~\ref{tab:modelos} lista todos os modelos avaliados.
+A Fig.~\ref{fig:protocolo} mostra os grupos numa cena. As vistas de treino não usadas entre 25° e 50° ficam de fora, para que o grupo ``acima'' tenha só vistas de teste. Para medir o efeito da largura da faixa (QP1), repetimos o experimento com treino abaixo de 15°. Como referência de cobertura completa, treinamos o mesmo 3DGS com as 100 vistas de treino. Como as vistas de cima fazem parte do treino desse modelo, treinamos também uma versão com todas as alturas \emph{sem as fotos avaliadas}: das 100 vistas de treino, separamos, alternadamente por elevação, metade das vistas acima de 50° e as vistas usadas na demonstração interativa (de 22 a 24 por cena; 9 no \textit{ball}). As vistas restantes cobrem de 7° a 86° (78° no \textit{teapot} e 68° no \textit{ball}), e as separadas são inéditas para todos os modelos comparados. A Tabela~\ref{tab:modelos} lista todos os modelos avaliados.
 
 \input{tab_modelos.tex}
 

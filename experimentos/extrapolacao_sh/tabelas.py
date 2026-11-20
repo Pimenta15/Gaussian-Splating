@@ -518,6 +518,72 @@ def figura_custo(custo: dict, destino: Path, banda: float) -> None:
     plt.close(fig)
 
 
+def tabela_holdout(saidas: Path, banda: float) -> tuple[str, dict]:
+    """Faixa contra todas as alturas, com as fotos avaliadas fora do treino dos dois (prepara_holdout.py).
+    De cima: as vistas separadas acima de 50°; acima: as vistas de teste de 25° a 47°."""
+    def media(linhas, chave, filtro):
+        xs = [ln[chave]["psnr"] for ln in linhas if filtro(ln)]
+        return float(np.mean(xs)) if xs else None
+
+    dados = {}
+    for c in CENAS:
+        f_h = saidas / c / "holdout_sh3" / "resultado.json"
+        if not f_h.exists():
+            continue
+        hold = json.loads(f_h.read_text())["por_vista"]
+        sep = {ln["nome"] for ln in hold if ln["origem"] == "treino_separada" and ln["elev"] >= 50}
+        b = json.loads((saidas / c / f"b{banda:g}_sh3" / "resultado.json").read_text())["por_vista"]
+        cima_b = lambda ln: ln["origem"] == "treino_nao_usada" and ln["nome"] in sep  # noqa: E731
+        cima_h = lambda ln: ln["origem"] == "treino_separada" and ln["elev"] >= 50  # noqa: E731
+        acima = lambda ln: ln["origem"] == "teste" and ln["elev"] >= banda  # noqa: E731
+        d = {"n_cima": len(sep),
+             "3dgs_faixa": {"cima": media(b, "original", cima_b), "acima": media(b, "original", acima)},
+             "3dgs_todas": {"cima": media(hold, "original", cima_h), "acima": media(hold, "original", acima)}}
+        for rot, chave in ((f"refgs_b{banda:g}", "refgs_faixa"), ("refgs_holdout", "refgs_todas")):
+            f = saidas / c / rot / "por_vista.json"
+            if f.exists():
+                rg = json.loads(f.read_text())
+                filtro = cima_b if chave == "refgs_faixa" else cima_h
+                d[chave] = {"cima": media(rg, "refgs", filtro), "acima": media(rg, "refgs", acima)}
+        dados[c] = d
+    if not dados:
+        return "", {}
+    mods = ["3dgs_faixa", "3dgs_todas", "refgs_faixa", "refgs_todas"]
+    linhas = [r"\begin{table}[t]", r"\centering",
+              rf"\caption{{PSNR (dB) com treino só abaixo de {banda:g}° (``faixa'') ou com todas as alturas sem as fotos "
+              r"avaliadas (``todas''). As mesmas fotos ficam fora do treino dos quatro modelos: de cima, as vistas "
+              r"separadas acima de 50°; acima, as vistas de teste de 25° a 47°.}",
+              rf"\label{{tab:holdout{int(banda)}}}", r"\setlength{\tabcolsep}{3pt}", r"\footnotesize",
+              r"\begin{tabular}{l cccc cccc}", r"\toprule",
+              r" & \multicolumn{4}{c}{De cima} & \multicolumn{4}{c}{Acima} \\",
+              r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}",
+              r" & \multicolumn{2}{c}{3DGS} & \multicolumn{2}{c}{Ref-G.} & \multicolumn{2}{c}{3DGS} & "
+              r"\multicolumn{2}{c}{Ref-G.} \\",
+              r"Cena & faixa & todas & faixa & todas & faixa & todas & faixa & todas \\", r"\midrule"]
+    for c, d in dados.items():
+        cel = [fmt(d.get(m, {}).get(g)) for g in ("cima", "acima") for m in mods]
+        linhas.append(f"\\textit{{{c}}} & " + " & ".join(cel) + r" \\")
+    medias = {}
+    com_rg = [c for c in dados if "refgs_todas" in dados[c]]
+    for cenas in (list(dados), com_rg):  # média geral e, se o Ref-Gaussian existir só em parte, média nessa parte
+        rot = f"Média ({len(cenas)})"
+        if not cenas or rot in medias:
+            continue
+        cel, m_ = [], {}
+        for g in ("cima", "acima"):
+            for m in mods:
+                xs = [dados[c][m][g] for c in cenas if m in dados[c] and dados[c][m].get(g) is not None]
+                v = float(np.mean(xs)) if len(xs) == len(cenas) else None
+                m_[f"{m}_{g}"] = v
+                cel.append(fmt(v))
+        medias[rot] = m_
+        linhas.append(rf"{rot} & " + " & ".join(cel) + r" \\")
+    if medias:  # linha divisória antes da primeira média
+        linhas.insert(len(linhas) - len(medias), r"\midrule")
+    linhas += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    return "\n".join(linhas) + "\n", {"por_cena": dados, "medias": medias}
+
+
 def tabela_refgs_iteracoes(saidas: Path, banda: float) -> tuple[str, dict]:
     """Ref-Gaussian treinado só na faixa (28 mil iterações) contra o completo em 30, 40 e 50 mil iterações, nas
     vistas de teste acima da faixa: separa o efeito das vistas de cima do efeito das iterações."""
@@ -562,17 +628,17 @@ def tabela_refgs_oraculos(saidas: Path, banda: float) -> tuple[str, dict]:
     """Oráculos no Ref-Gaussian (refgs_oraculo.py): PSNR nas vistas de cima de índice ímpar, depois de reajustar
     com as de índice par só o material, só o ambiente, só a luz indireta ou as três. Ao lado, o 3DGS nas mesmas
     vistas, original e com os oráculos de cor e de geometria."""
-    partes = ("material", "ambiente", "indireta", "aparencia")
+    partes = ("material", "ambiente", "indireta", "aparencia", "geometria", "tudo")
     dados = {}
     for c in CENAS:
         f = saidas / c / f"refgs_b{banda:g}" / "oraculo_refgs.json"
         if not f.exists():
             continue
         r = json.loads(f.read_text())
-        if not all(p in r for p in ("original",) + partes):
+        if not all(p in r for p in ("original",) + partes[:4]):
             continue
-        d = {"refgs": r["original"]["impares"]["psnr"]}
-        d.update({p: r[p]["impares"]["psnr"] for p in partes})
+        d = {"refgs": r["original"]["impares"]["psnr"], "n": r["original"]["impares"]["n"]}
+        d.update({p: r[p]["impares"]["psnr"] for p in partes if p in r})
         f3 = saidas / c / f"b{banda:g}_sh3" / "oraculo.json"
         f32 = saidas / c / f"b{banda:g}_sh3" / "oraculo2.json"
         if f3.exists():
@@ -584,23 +650,25 @@ def tabela_refgs_oraculos(saidas: Path, banda: float) -> tuple[str, dict]:
     if not dados:
         return "", {}
     cols = [("3dgs", "orig."), ("3dgs_cor", "cor"), ("3dgs_geo", "geom."), ("refgs", "orig."),
-            ("material", "mat."), ("ambiente", "amb."), ("indireta", "ind."), ("aparencia", "todas")]
-    linhas = [r"\begin{table}[t]", r"\centering",
-              rf"\caption{{Oráculos de cima, treino abaixo de {banda:g}° (PSNR em dB nas vistas de cima de índice "
-              r"ímpar; o ajuste usa as de índice par). No 3DGS, reajusta-se só a cor (SH) ou só a geometria. No "
-              r"Ref-Gaussian, a geometria fica congelada e reajusta-se só o material (cor base, cor difusa, força do "
-              r"reflexo, rugosidade, metalicidade), só o mapa de ambiente, só a luz indireta ou os três.}",
-              rf"\label{{tab:refgsoraculos{int(banda)}}}", r"\setlength{\tabcolsep}{2.5pt}", r"\footnotesize",
-              r"\begin{tabular}{l ccc ccccc}", r"\toprule",
-              r" & \multicolumn{3}{c}{3DGS} & \multicolumn{5}{c}{Ref-Gaussian} \\",
-              r"\cmidrule(lr){2-4}\cmidrule(lr){5-9}",
+            ("material", "material"), ("ambiente", "ambiente"), ("indireta", "indireta"), ("aparencia", "aparência"),
+            ("geometria", "geometria"), ("tudo", "tudo")]
+    linhas = [r"\begin{table*}[t]", r"\centering",
+              rf"\caption{{Oráculos de cima, treino abaixo de {banda:g}° (PSNR em dB nas vistas de cima de índice ímpar; "
+              r"o ajuste usa as de índice par). No 3DGS, reajusta-se só a cor (SH) ou só a geometria. No Ref-Gaussian, "
+              r"reajusta-se só o material (cor base, cor difusa, intensidade do reflexo, rugosidade, metalicidade), só o "
+              r"mapa de ambiente, só a luz indireta, as três (aparência), só a geometria (posições, formas, opacidades e "
+              r"normais) ou tudo. No \textit{ball} há apenas cinco vistas de avaliação.}",
+              rf"\label{{tab:refgsoraculos{int(banda)}}}", r"\setlength{\tabcolsep}{4pt}", r"\footnotesize",
+              r"\begin{tabular}{l ccc ccccccc}", r"\toprule",
+              r" & \multicolumn{3}{c}{3DGS} & \multicolumn{7}{c}{Ref-Gaussian} \\",
+              r"\cmidrule(lr){2-4}\cmidrule(lr){5-11}",
               "Cena & " + " & ".join(n for _, n in cols) + r" \\", r"\midrule"]
     for c, d in dados.items():
         linhas.append(f"\\textit{{{c}}} & " + " & ".join(fmt(d.get(k)) for k, _ in cols) + r" \\")
     med = {k: float(np.mean([d[k] for d in dados.values() if k in d])) for k, _ in cols
            if all(k in d for d in dados.values())}
-    linhas += [r"\midrule", "Média & " + " & ".join(fmt(med.get(k)) for k, _ in cols) + r" \\",
-               r"\bottomrule", r"\end{tabular}", r"\end{table}"]
+    linhas += [r"\midrule", f"Média ({len(dados)}) & " + " & ".join(fmt(med.get(k)) for k, _ in cols) + r" \\",
+               r"\bottomrule", r"\end{tabular}", r"\end{table*}"]
     return "\n".join(linhas) + "\n", {"por_cena": dados, "media": med}
 
 
@@ -695,6 +763,9 @@ def main():
         tex_it, refgs_it = tabela_refgs_iteracoes(saidas, banda)
         if tex_it and banda == 25:
             (artigo / f"tab_refgs_iteracoes_b{banda}.tex").write_text(tex_it, "utf-8")
+        tex_ho, holdout = tabela_holdout(saidas, banda)
+        if tex_ho and banda == 25:
+            (artigo / f"tab_holdout_b{banda}.tex").write_text(tex_ho, "utf-8")
         curva(res, banda, artigo / "figs", ref or None)
         qualitativo(saidas, f"b{banda}_sh3", ["car", "helmet", "toaster"], artigo / "figs")
         resumo[f"b{banda}"] = {

@@ -232,3 +232,4 @@ documentacao/artigo-extrapolacao/*.out
 documentacao/artigo-extrapolacao/*_backup.tex
 documentacao/artigo-extrapolacao/perguntas_provaveis.md
 experimentos/extrapolacao_sh/figs_slides/
+experimentos/extrapolacao_sh/dados_holdout/

@@ -1,20 +1,23 @@
-\begin{table}[t]
+\begin{table*}[t]
 \centering
-\caption{Oráculos de cima, treino abaixo de 25° (PSNR em dB nas vistas de cima de índice ímpar; o ajuste usa as de índice par). No 3DGS, reajusta-se só a cor (SH) ou só a geometria. No Ref-Gaussian, a geometria fica congelada e reajusta-se só o material (cor base, cor difusa, força do reflexo, rugosidade, metalicidade), só o mapa de ambiente, só a luz indireta ou os três.}
+\caption{Oráculos de cima, treino abaixo de 25° (PSNR em dB nas vistas de cima de índice ímpar; o ajuste usa as de índice par). No 3DGS, reajusta-se só a cor (SH) ou só a geometria. No Ref-Gaussian, reajusta-se só o material (cor base, cor difusa, intensidade do reflexo, rugosidade, metalicidade), só o mapa de ambiente, só a luz indireta, as três (aparência), só a geometria (posições, formas, opacidades e normais) ou tudo. No \textit{ball} há apenas cinco vistas de avaliação.}
 \label{tab:refgsoraculos25}
-\setlength{\tabcolsep}{2.5pt}
+\setlength{\tabcolsep}{4pt}
 \footnotesize
-\begin{tabular}{l ccc ccccc}
+\begin{tabular}{l ccc ccccccc}
 \toprule
- & \multicolumn{3}{c}{3DGS} & \multicolumn{5}{c}{Ref-Gaussian} \\
-\cmidrule(lr){2-4}\cmidrule(lr){5-9}
-Cena & orig. & cor & geom. & orig. & mat. & amb. & ind. & todas \\
+ & \multicolumn{3}{c}{3DGS} & \multicolumn{7}{c}{Ref-Gaussian} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-11}
+Cena & orig. & cor & geom. & orig. & material & ambiente & indireta & aparência & geometria & tudo \\
 \midrule
-\textit{car} & 19{,}64 & 26{,}05 & 27{,}22 & 20{,}92 & 23{,}08 & 21{,}71 & 20{,}94 & 23{,}73 \\
-\textit{helmet} & 21{,}29 & 27{,}08 & 27{,}74 & 20{,}75 & 22{,}08 & 21{,}40 & 21{,}17 & 23{,}58 \\
-\textit{toaster} & 14{,}86 & 20{,}14 & 22{,}49 & 16{,}19 & 17{,}46 & 16{,}68 & 16{,}32 & 18{,}56 \\
+\textit{ball} & 15{,}02 & 18{,}96 & 21{,}57 & 16{,}19 & 18{,}70 & 16{,}75 & 16{,}20 & 20{,}22 & 21{,}00 & 23{,}32 \\
+\textit{car} & 19{,}64 & 26{,}05 & 27{,}22 & 20{,}92 & 23{,}08 & 21{,}71 & 20{,}94 & 23{,}73 & 26{,}94 & 27{,}87 \\
+\textit{coffee} & 19{,}38 & 27{,}08 & 28{,}94 & 19{,}08 & 23{,}22 & 19{,}30 & 19{,}17 & 23{,}56 & 27{,}45 & 27{,}87 \\
+\textit{helmet} & 21{,}29 & 27{,}08 & 27{,}74 & 20{,}75 & 22{,}08 & 21{,}40 & 21{,}17 & 23{,}58 & 27{,}28 & 28{,}21 \\
+\textit{teapot} & 35{,}61 & 43{,}02 & 45{,}59 & 34{,}51 & 35{,}14 & 35{,}27 & 34{,}62 & 37{,}48 & 41{,}37 & 42{,}34 \\
+\textit{toaster} & 14{,}86 & 20{,}14 & 22{,}49 & 16{,}19 & 17{,}46 & 16{,}68 & 16{,}32 & 18{,}56 & 22{,}16 & 23{,}08 \\
 \midrule
-Média & 18{,}60 & 24{,}42 & 25{,}82 & 19{,}29 & 20{,}87 & 19{,}93 & 19{,}48 & 21{,}96 \\
+Média (6) & 20{,}97 & 27{,}05 & 28{,}92 & 21{,}27 & 23{,}28 & 21{,}85 & 21{,}40 & 24{,}52 & 27{,}70 & 28{,}78 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
