@@ -6,7 +6,7 @@ $fonte = "C:\Users\Pimenta\Desktop\vitrine3d\services\worker\vitrine_worker"
 $vit   = "C:\Users\Pimenta\Desktop\vitrine3d\outputs"
 New-Item -ItemType Directory -Force "$exp\saidas" | Out-Null
 $log = "$exp\saidas\fila.log"
-$base = "docker run --rm --gpus all -v `"$dados`:/data:ro`" -v `"$dados`:/dados/ref_nerf:ro`" -v `"$exp\dados_banda`:/dados/banda`" -v `"$exp`:/exp`" -v `"$fonte`:/app/vitrine_worker:ro`" -v vitrine3d-cache:/cache -e TORCH_HOME=/cache/torch -w /exp vitrine3d-worker:dev"
+$base = "docker run --rm --gpus all -v `"$dados`:/data:ro`" -v `"$dados`:/dados/ref_nerf:ro`" -v `"$exp\dados_banda`:/dados/banda`" -v `"$exp`:/exp`" -v vitrine3d-cache:/cache -e TORCH_HOME=/cache/torch -w /exp vitrine3d-worker:dev"
 
 function Esperar-GPU {  # outra execução (de uma fila anterior) ainda na GPU
     while (@(docker ps -q --filter ancestor=vitrine3d-worker:dev).Count -gt 0) { Start-Sleep 20 }

@@ -1,0 +1,27 @@
+{
+ "n_gaussianas": 273493,
+ "el2": {
+  "psnr_antes_vs_depois_medio": 49.62148280716392,
+  "min": 46.767776941443216
+ },
+ "el10": {
+  "psnr_antes_vs_depois_medio": 43.45926636021626,
+  "min": 39.267974605154436
+ },
+ "el20": {
+  "psnr_antes_vs_depois_medio": 37.79818320992818,
+  "min": 33.628829340526806
+ },
+ "el45": {
+  "psnr_antes_vs_depois_medio": 35.09973682218983,
+  "min": 32.05577185304187
+ },
+ "el70": {
+  "psnr_antes_vs_depois_medio": 37.903282146056576,
+  "min": 37.0225261050571
+ },
+ "el89": {
+  "psnr_antes_vs_depois_medio": 38.9555223698199,
+  "min": 38.714680388568176
+ }
+}

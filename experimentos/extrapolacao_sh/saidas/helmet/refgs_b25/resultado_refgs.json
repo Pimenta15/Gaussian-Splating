@@ -1,0 +1,15 @@
+{
+ "metricas": {
+  "psnr": 23.6761313608844,
+  "ssim": 0.9152994851649034,
+  "lpips": 0.1255808123900863,
+  "fps": 47.51812885992575,
+  "tempo_treino_s": 2683.249771595001
+ },
+ "arquivos": {
+  "ply": "/exp/saidas/helmet/refgs_b25/point_cloud/iteration_28000/point_cloud.ply",
+  "log": "/exp/saidas/helmet/refgs_b25/refgs.log",
+  "env1": "/exp/saidas/helmet/refgs_b25/env1.png",
+  "env2": "/exp/saidas/helmet/refgs_b25/env2.png"
+ }
+}

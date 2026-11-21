@@ -1,0 +1,116 @@
+{
+ "ball": {
+  "n_treino": 26,
+  "celulas_cobertas": 2592,
+  "faixa": {
+   "n": 93,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 206.0
+  },
+  "acima": {
+   "n": 107,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 205.0
+  },
+  "cima": {
+   "n": 11,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 205.0
+  }
+ },
+ "car": {
+  "n_treino": 37,
+  "celulas_cobertas": 2592,
+  "faixa": {
+   "n": 93,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 124.0
+  },
+  "acima": {
+   "n": 107,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 122.0
+  },
+  "cima": {
+   "n": 31,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 121.0
+  }
+ },
+ "coffee": {
+  "n_treino": 37,
+  "celulas_cobertas": 2592,
+  "faixa": {
+   "n": 93,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 236.0
+  },
+  "acima": {
+   "n": 107,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 88.0
+  },
+  "cima": {
+   "n": 31,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 36.0
+  }
+ },
+ "helmet": {
+  "n_treino": 37,
+  "celulas_cobertas": 2592,
+  "faixa": {
+   "n": 93,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 230.0
+  },
+  "acima": {
+   "n": 107,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 223.0
+  },
+  "cima": {
+   "n": 31,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 223.0
+  }
+ },
+ "teapot": {
+  "n_treino": 30,
+  "celulas_cobertas": 2592,
+  "faixa": {
+   "n": 93,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 48.0
+  },
+  "acima": {
+   "n": 107,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 36.0
+  },
+  "cima": {
+   "n": 35,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 25.0
+  }
+ },
+ "toaster": {
+  "n_treino": 37,
+  "celulas_cobertas": 2592,
+  "faixa": {
+   "n": 93,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 459.0
+  },
+  "acima": {
+   "n": 107,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 96.0
+  },
+  "cima": {
+   "n": 31,
+   "frac_nao_vista": 0.0,
+   "densidade_mediana": 82.0
+  }
+ }
+}

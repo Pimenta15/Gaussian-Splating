@@ -1,0 +1,15 @@
+{
+ "metricas": {
+  "psnr": 26.886987162065935,
+  "ssim": 0.9353403615521955,
+  "lpips": 0.0855857294958991,
+  "fps": 45.200947130305565,
+  "tempo_treino_s": 3331.121386051178
+ },
+ "arquivos": {
+  "ply": "/exp/saidas/toaster/refgs_holdout/point_cloud/iteration_28000/point_cloud.ply",
+  "log": "/exp/saidas/toaster/refgs_holdout/refgs.log",
+  "env1": "/exp/saidas/toaster/refgs_holdout/env1.png",
+  "env2": "/exp/saidas/toaster/refgs_holdout/env2.png"
+ }
+}

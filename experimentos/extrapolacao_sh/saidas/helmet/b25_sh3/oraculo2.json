@@ -1,0 +1,13 @@
+{
+ "cima": {
+  "n": 31,
+  "n_impares": 15,
+  "n_lado_b": 18,
+  "original_impares": 21.29115982055664,
+  "so_dc_sem_ajuste_impares": 21.318802897135416,
+  "oraculo_cor_dc_impares": 24.50493469238281,
+  "oraculo_geometria_impares": 27.74158503214518,
+  "original_lado_b": 21.36826123131646,
+  "oraculo_geometria_lado_oposto": 23.029043939378525
+ }
+}

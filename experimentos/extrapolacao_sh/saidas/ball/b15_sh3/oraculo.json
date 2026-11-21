@@ -1,0 +1,23 @@
+{
+ "cima": {
+  "n": 11,
+  "original": 13.744735284285111,
+  "oraculo_todas": 25.51328364285556,
+  "original_impares": 14.129143714904785,
+  "oraculo_cruzado_impares": 18.63926544189453,
+  "n_lado_b": 4,
+  "original_lado_b": 13.927515983581543,
+  "oraculo_lado_oposto": 14.858272314071655,
+  "figura_oraculo": "lado_oposto"
+ },
+ "acima": {
+  "n": 141,
+  "original": 14.55372729199998,
+  "oraculo_todas": 22.425357142238752,
+  "original_impares": 14.523752089909145,
+  "oraculo_cruzado_impares": 22.307418387276787,
+  "n_lado_b": 50,
+  "original_lado_b": 13.632337989807128,
+  "oraculo_lado_oposto": 15.123110103607178
+ }
+}

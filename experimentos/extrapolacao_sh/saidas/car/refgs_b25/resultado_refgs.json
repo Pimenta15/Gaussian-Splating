@@ -1,0 +1,15 @@
+{
+ "metricas": {
+  "psnr": 23.98942056082954,
+  "ssim": 0.8832825707845362,
+  "lpips": 0.07937945882318817,
+  "fps": 60.84804024535546,
+  "tempo_treino_s": 2534.4989852905273
+ },
+ "arquivos": {
+  "ply": "/exp/saidas/car/refgs_b25/point_cloud/iteration_28000/point_cloud.ply",
+  "log": "/exp/saidas/car/refgs_b25/refgs.log",
+  "env1": "/exp/saidas/car/refgs_b25/env1.png",
+  "env2": "/exp/saidas/car/refgs_b25/env2.png"
+ }
+}

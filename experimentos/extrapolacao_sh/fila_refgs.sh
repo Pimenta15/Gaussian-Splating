@@ -3,13 +3,12 @@
 EXP="C:\Users\Pimenta\Desktop\Gaussian-Splating\experimentos\extrapolacao_sh"
 DADOS="C:\Users\Pimenta\Desktop\Gaussian-Splating\ref-gaussian\data\ref_nerf"
 REFOUT="C:\Users\Pimenta\Desktop\Gaussian-Splating\ref-gaussian\output"
-FONTE="C:\Users\Pimenta\Desktop\vitrine3d\services\worker\vitrine_worker"
 PY="C:/Users/Pimenta/AppData/Local/Programs/Python/Python311/python.exe"
 LOG=saidas/fila_refgs.log
 roda() {
   MSYS_NO_PATHCONV=1 docker run --rm --gpus all -v "$DADOS:/data:ro" -v "$DADOS:/dados/ref_nerf:ro" \
     -v "$DADOS:/opt/ref-gaussian/data/ref_nerf:ro" -v "$REFOUT:/opt/ref-gaussian/output:ro" \
-    -v "$EXP\dados_banda:/dados/banda" -v "$EXP:/exp" -v "$FONTE:/app/vitrine_worker:ro" \
+    -v "$EXP\dados_banda:/dados/banda" -v "$EXP:/exp" \
     -v vitrine3d-cache:/cache -e TORCH_HOME=/cache/torch -w /exp vitrine3d-worker:dev "$@"
 }
 oraculo() {

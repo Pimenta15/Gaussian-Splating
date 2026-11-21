@@ -224,7 +224,17 @@ ref-gaussian/
 desktop.ini
 
 # Experimento de extrapolação em elevação: saídas de treino, divisões geradas e arquivos de compilação
-experimentos/extrapolacao_sh/saidas/
+# dos resultados, só os JSON (deles saem todas as tabelas); imagens, modelos e execuções descartadas ficam fora
+experimentos/extrapolacao_sh/saidas/**
+!experimentos/extrapolacao_sh/saidas/**/
+!experimentos/extrapolacao_sh/saidas/**/*.json
+experimentos/extrapolacao_sh/saidas/**/explorar/
+experimentos/extrapolacao_sh/saidas/**/cameras.json
+experimentos/extrapolacao_sh/saidas/*/*_falhou_30k/
+experimentos/extrapolacao_sh/saidas/*/*_interrompido/
+experimentos/extrapolacao_sh/saidas/**/oraculo_v1.json
+experimentos/extrapolacao_sh/saidas/**/oraculo2_teste.json
+experimentos/extrapolacao_sh/saidas/**/comparacao_sem_global_adapt.json
 experimentos/extrapolacao_sh/dados_banda/
 documentacao/artigo-extrapolacao/*.aux
 documentacao/artigo-extrapolacao/*.log
